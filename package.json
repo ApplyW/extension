@@ -1,0 +1,16 @@
+{
+  "name": "applyw-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@types/chrome": "^0.2.8",
+    "typescript": "^7.0.2",
+    "vite": "^8.0.0"
+  }
+}
