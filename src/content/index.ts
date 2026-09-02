@@ -11,20 +11,16 @@ async function scanForCards(): Promise<void> {
   })
 }
 
-// Batches bursts of mutations from infinite scroll into a single rescan.
+// Batches bursts of mutations into a single rescan. Triggers on *any* subtree change,
+// not just whole new cards being added: LinkedIn virtualizes this list, so a card
+// already in the DOM can have its inner content torn down and rebuilt as it scrolls
+// in/out of view. Filtering to "did a new card element show up" missed those rebuilds
+// and left recycled cards unprocessed — scanForCards() is idempotent, so rescanning on
+// every batch is safe, just debounced to stay cheap.
 function observeJobList(): void {
   let rescanTimer: ReturnType<typeof setTimeout> | undefined
 
-  const observer = new MutationObserver((mutations) => {
-    const hasNewCards = mutations.some((mutation) =>
-      Array.from(mutation.addedNodes).some(
-        (node) =>
-          node instanceof HTMLElement &&
-          (node.matches(JOB_CARD_SELECTOR) || node.querySelector(JOB_CARD_SELECTOR))
-      )
-    )
-    if (!hasNewCards) return
-
+  const observer = new MutationObserver(() => {
     clearTimeout(rescanTimer)
     rescanTimer = setTimeout(() => void scanForCards(), 200)
   })
