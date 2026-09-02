@@ -1,12 +1,15 @@
 import { blockCompany, hideJob, type Settings } from '../shared/storage'
 import { ensureLanguageDetected, getCachedLanguage } from './language'
+import { getJobDescription } from './jobDescriptions'
 
 export const JOB_CARD_SELECTOR = 'li[data-occludable-job-id]'
 
 const ACTION_BUTTON_CLASS = 'applyw-action-button'
 const COMPANY_NAME_SELECTOR = '.artdeco-entity-lockup__subtitle'
 const FOOTER_ITEM_SELECTOR = '.job-card-container__footer-item'
-const TITLE_SELECTOR = '.job-card-list__title--link'
+const LANGUAGE_BADGE_CLASS = 'applyw-language-badge'
+// Where the language badge gets inserted — see renderLanguageBadge.
+const TITLE_LINK_SELECTOR = '.job-card-list__title--link'
 
 export function getJobId(card: Element): string | null {
   return card.getAttribute('data-occludable-job-id')
@@ -17,12 +20,39 @@ export function getCompanyName(card: Element): string | null {
   return text ? text.trim() : null
 }
 
-// The search-results card only ever renders the title (no description text), so language
-// detection runs on this alone. Titles are short, which chrome.i18n.detectLanguage is
-// less reliable on than a full paragraph — treat its guess as a heuristic, not a fact.
-export function getJobTitle(card: Element): string | null {
-  const text = card.querySelector(TITLE_SELECTOR)?.textContent
-  return text ? text.trim() : null
+// Shows the detected language right next to the job title, inline with LinkedIn's own
+// "verified" icon — reads as part of the title rather than a separate row. Looked up (not
+// a stale flag) each call so a recycled title link's badge gets updated/cleared for
+// whatever job it's currently showing.
+function renderLanguageBadge(card: HTMLElement, languageCode: string | null): void {
+  const titleLink = card.querySelector(TITLE_LINK_SELECTOR)
+  if (!titleLink) return
+
+  let badge = titleLink.querySelector<HTMLElement>(`.${LANGUAGE_BADGE_CLASS}`)
+  if (!languageCode) {
+    badge?.remove()
+    return
+  }
+
+  if (!badge) {
+    badge = document.createElement('span')
+    badge.className = LANGUAGE_BADGE_CLASS
+    Object.assign(badge.style, {
+      display: 'inline-block',
+      marginLeft: '6px',
+      padding: '1px 6px',
+      fontSize: '11px',
+      fontWeight: '600',
+      letterSpacing: '0.02em',
+      textTransform: 'uppercase',
+      borderRadius: '10px',
+      border: '1px solid rgba(128, 128, 128, 0.5)',
+      opacity: '0.75',
+      verticalAlign: 'middle'
+    })
+    titleLink.appendChild(badge)
+  }
+  if (badge.textContent !== languageCode) badge.textContent = languageCode
 }
 
 // Companies are matched case-insensitively so "R+V Versicherung" and a differently-cased
@@ -113,8 +143,7 @@ export function applyHiddenState(
   hiddenJobIds: Set<string>,
   blockedCompanies: Set<string>,
   settings: Settings,
-  selectedLanguages: Set<string>,
-  onLanguageDetected: () => void
+  selectedLanguages: Set<string>
 ): void {
   const jobId = getJobId(card)
   const companyName = getCompanyName(card)
@@ -123,15 +152,22 @@ export function applyHiddenState(
   const isHiddenApplied = settings.hideApplied && hasFooterState(card, 'Applied')
   const isHiddenViewed = settings.hideViewed && hasFooterState(card, 'Viewed')
 
+  // Detection (and the badge showing its result) only ever runs once pageBridge.ts hands
+  // over the job's full description (see jobDescriptions.ts) — a title is too short/
+  // unreliable to detect from, so a job simply shows no badge and is never language-
+  // filtered until its description actually arrives (from LinkedIn prefetching it, or the
+  // card being opened).
+  let detectedLanguage: string | null = null
+  if (jobId) {
+    const description = getJobDescription(jobId)
+    detectedLanguage = description ? ensureLanguageDetected(jobId, description) : (getCachedLanguage(jobId) ?? null)
+  }
+  renderLanguageBadge(card, detectedLanguage)
+
   // Only hide on a positive, known mismatch — a job whose language hasn't resolved yet
   // (or couldn't be detected) stays visible rather than being hidden on missing data.
-  let isHiddenByLanguage = false
-  if (jobId && selectedLanguages.size > 0) {
-    const title = getJobTitle(card)
-    if (title) ensureLanguageDetected(jobId, title, onLanguageDetected)
-    const detectedLanguage = getCachedLanguage(jobId)
-    isHiddenByLanguage = detectedLanguage != null && !selectedLanguages.has(detectedLanguage)
-  }
+  const isHiddenByLanguage =
+    selectedLanguages.size > 0 && detectedLanguage !== null && !selectedLanguages.has(detectedLanguage)
 
   // Set unconditionally (not just hide) so a recycled card correctly ends up visible
   // when reused for a job that isn't hidden/blocked.

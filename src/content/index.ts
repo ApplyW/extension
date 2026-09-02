@@ -2,6 +2,7 @@ import { getBlockedCompanies, getHiddenJobIds, getSelectedLanguages, getSettings
 import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
 import { injectFilterToggles } from './filterToggles'
 import { injectLanguageFilter } from './languageFilter'
+import { listenForJobDescriptions } from './jobDescriptions'
 
 console.log('ApplyW loaded')
 
@@ -22,7 +23,7 @@ async function scanForCards(): Promise<void> {
     getSelectedLanguages()
   ])
   document.querySelectorAll<HTMLElement>(JOB_CARD_SELECTOR).forEach((card) => {
-    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages, scheduleRescan)
+    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages)
     injectActionButtons(card)
   })
   void injectFilterToggles(scheduleRescan)
@@ -46,3 +47,7 @@ observeJobList()
 chrome.storage.onChanged.addListener((_changes, areaName) => {
   if (areaName === 'local') scheduleRescan()
 })
+
+// Rescans when pageBridge.ts (a MAIN-world script) hands over a job's full description,
+// so language detection can upgrade from the title-based guess to the real thing.
+listenForJobDescriptions(scheduleRescan)

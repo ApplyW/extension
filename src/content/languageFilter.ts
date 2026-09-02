@@ -87,12 +87,42 @@ function createLanguageRow(
   const checkbox = document.createElement('input')
   checkbox.type = 'checkbox'
   checkbox.checked = isChecked
-  checkbox.addEventListener('change', () => onToggle(language.code, checkbox.checked))
+  // Visually hidden but still the real, keyboard/screen-reader-accessible control — LinkedIn's
+  // page CSS resets native checkbox appearance globally (it draws its own custom checkboxes
+  // elsewhere via its own classes), which silently ate ours too. The box below is drawn by us
+  // so it renders regardless of that reset.
+  Object.assign(checkbox.style, { position: 'absolute', width: '1px', height: '1px', opacity: '0', margin: '0' })
+
+  const box = document.createElement('span')
+  Object.assign(box.style, {
+    flex: '0 0 auto',
+    width: '14px',
+    height: '14px',
+    borderRadius: '3px',
+    border: '1px solid CanvasText',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '10px',
+    lineHeight: '1'
+  })
+
+  const renderBox = (checked: boolean): void => {
+    box.textContent = checked ? '✓' : ''
+    box.style.background = checked ? 'CanvasText' : 'transparent'
+    box.style.color = checked ? 'Canvas' : 'transparent'
+  }
+  renderBox(isChecked)
+
+  checkbox.addEventListener('change', () => {
+    renderBox(checkbox.checked)
+    onToggle(language.code, checkbox.checked)
+  })
 
   const text = document.createElement('span')
   text.textContent = language.name
 
-  label.append(checkbox, text)
+  label.append(checkbox, box, text)
   row.appendChild(label)
 
   const lowerName = language.name.toLowerCase()
