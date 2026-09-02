@@ -44,6 +44,8 @@ No config/secrets file exists yet. If one is added, it must never be committed â
 
 ## Commit conventions
 
+Commit directly on `main` â€” don't create a feature branch per change unless asked to.
+
 Conventional Commits format: `<type>[optional scope][optional !]: <description>`
 
 Types:
