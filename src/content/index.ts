@@ -1,4 +1,4 @@
-import { getBlockedCompanies, getHiddenJobIds } from './storage'
+import { getBlockedCompanies, getHiddenJobIds } from '../shared/storage'
 import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
 
 console.log('ApplyW loaded')
@@ -30,3 +30,9 @@ function observeJobList(): void {
 
 void scanForCards()
 observeJobList()
+
+// Re-apply hidden state when the popup edits blocked companies / hidden jobs (e.g.
+// unblocking a company), so the page reflects it without needing a reload.
+chrome.storage.onChanged.addListener((_changes, areaName) => {
+  if (areaName === 'local') void scanForCards()
+})

@@ -1,4 +1,4 @@
-import { blockCompany, hideJob } from './storage'
+import { blockCompany, hideJob } from '../shared/storage'
 
 export const JOB_CARD_SELECTOR = 'li[data-occludable-job-id]'
 

@@ -7,8 +7,9 @@ Guidance for Claude when working in this codebase.
 - **Language**: TypeScript
 - **Build**: Vite + `@crxjs/vite-plugin` (CRXJS)
 - **Platform**: Chrome Extension, Manifest V3
-- **Scope today**: content script only (`https://www.linkedin.com/jobs/*`) — no popup, no background service worker yet
-- **Persistence**: `chrome.storage.local`
+- **Scope today**: content script (`https://www.linkedin.com/jobs/*`) + a React popup — no background service worker yet
+- **UI**: React 19, only used for the popup (`src/popup/`); the content script stays framework-free DOM manipulation
+- **Persistence**: `chrome.storage.local`, capped at 10 MB without the `unlimitedStorage` permission (not requested) — not a practical constraint for this data (short id/company strings)
 
 ## Running tasks
 
@@ -23,10 +24,11 @@ Load `dist/` as an unpacked extension via `chrome://extensions` (Developer mode)
 ## Structure
 
 - `manifest.config.ts` — MV3 manifest via CRXJS's `defineManifest`. Keep `content_scripts.matches` and `permissions` as narrow as possible; currently just the LinkedIn jobs path and the `storage` permission.
-- `vite.config.ts` — wires the `crx()` plugin to that manifest.
-- `src/content/index.ts` — entry point: initial scan of job cards, then a `MutationObserver` (debounced) rescans as new cards load in on infinite scroll.
-- `src/content/jobCard.ts` — DOM layer: reads a card's `data-occludable-job-id`, injects the Hide button into LinkedIn's own `.job-card-list__actions-container`, applies hidden state.
-- `src/content/storage.ts` — `chrome.storage.local` read/write for the set of hidden job ids.
+- `vite.config.ts` — wires the `@vitejs/plugin-react` and `crx()` plugins to that manifest.
+- `src/shared/storage.ts` — `chrome.storage.local` read/write, shared by the content script and the popup. Company names are stored normalized (trimmed, lowercased) for matching, so the popup currently displays them lowercased too — known rough edge, not fixed.
+- `src/content/index.ts` — entry point: initial scan of job cards, a `MutationObserver` (debounced) that rescans on any DOM change (LinkedIn virtualizes/recycles cards, so this can't be limited to "new card appeared"), and a `chrome.storage.onChanged` listener so popup edits (e.g. unblocking a company) take effect without a page reload.
+- `src/content/jobCard.ts` — DOM layer: reads a card's `data-occludable-job-id` and company name (`.artdeco-entity-lockup__subtitle`), injects Hide/Block buttons into LinkedIn's own `.job-card-list__actions-container`, applies hidden state. Button injection is guarded by checking the live actions container for its own button, not a flag on the card — flags on the card would survive LinkedIn's content-recycling and skip re-injection.
+- `src/popup/` — `index.html` + `main.tsx` (mount) + `Popup.tsx` (lists blocked companies with an Unblock action, shows/clears the hidden-jobs count) + `popup.css`.
 
 Selectors here are copied from real LinkedIn markup, not guessed — if a selector stops matching (LinkedIn changed the DOM), ask for a fresh `outerHTML` sample of the affected card rather than guessing a replacement.
 

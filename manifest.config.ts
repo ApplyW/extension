@@ -7,6 +7,10 @@ export default defineManifest({
   description: 'Declutters LinkedIn job listings: hides seen/applied jobs, filters by language, blocks companies.',
   version: pkg.version,
   permissions: ['storage'],
+  action: {
+    default_popup: 'src/popup/index.html',
+    default_title: 'ApplyW'
+  },
   content_scripts: [
     {
       matches: ['https://www.linkedin.com/jobs/*'],
