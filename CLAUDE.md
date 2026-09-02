@@ -2,6 +2,10 @@
 
 Guidance for Claude when working in this codebase.
 
+"ApplyW" is a play on "Apply Wisely" — worth keeping in mind for any
+marketing copy (README, store listing, popup): the name should read as
+that pun, not as an unexplained abbreviation.
+
 ## Stack
 
 - **Language**: TypeScript

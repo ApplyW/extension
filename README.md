@@ -1,9 +1,7 @@
 <div align="center">
   <img src="src/assets/applyw-logo.png" alt="ApplyW logo" width="96" height="96">
 
-  # ApplyW
-
-  **Declutter your LinkedIn job search — entirely on your device.**
+  **Apply Wisely**: Declutter your LinkedIn job search — entirely on your device.
 
   [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
   [![Manifest V3](https://img.shields.io/badge/manifest-v3-1c6feb.svg)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
@@ -15,9 +13,9 @@
 
 LinkedIn's job search gets noisy fast: postings you've already seen or applied
 to keep resurfacing, listings show up in languages you don't read, and there's
-no quick way to stop seeing a company again. ApplyW is a small Chrome
-extension that fixes that, directly on the search results page — no account,
-no server, no data leaving your browser.
+no quick way to stop seeing a company again. **ApplyW** — *Apply Wisely* — is
+a small Chrome extension that fixes that, directly on the search results
+page — no account, no server, no data leaving your browser.
 
 ## Features
 

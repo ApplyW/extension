@@ -4,7 +4,7 @@ import pkg from './package.json' with { type: 'json' }
 export default defineManifest({
   manifest_version: 3,
   name: 'ApplyW',
-  description: 'Declutters LinkedIn job listings: hides seen/applied jobs, filters by language, blocks companies.',
+  description: "Apply Wisely: hide jobs you've seen, block companies, and filter listings by language on LinkedIn.",
   version: pkg.version,
   homepage_url: 'https://github.com/ApplyW/extension',
   icons: {
