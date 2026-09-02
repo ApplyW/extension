@@ -1,13 +1,13 @@
-import { getHiddenJobIds } from './storage'
-import { JOB_CARD_SELECTOR, applyHiddenState, injectHideButton } from './jobCard'
+import { getBlockedCompanies, getHiddenJobIds } from './storage'
+import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
 
 console.log('ApplyW loaded')
 
 async function scanForCards(): Promise<void> {
-  const hiddenJobIds = await getHiddenJobIds()
+  const [hiddenJobIds, blockedCompanies] = await Promise.all([getHiddenJobIds(), getBlockedCompanies()])
   document.querySelectorAll<HTMLElement>(JOB_CARD_SELECTOR).forEach((card) => {
-    applyHiddenState(card, hiddenJobIds)
-    injectHideButton(card)
+    applyHiddenState(card, hiddenJobIds, blockedCompanies)
+    injectActionButtons(card)
   })
 }
 
