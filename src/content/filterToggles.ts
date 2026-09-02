@@ -1,9 +1,6 @@
 import { getSettings, setSetting, type Settings } from '../shared/storage'
+import { findFilterBar } from './filterBar'
 
-// LinkedIn's own top filter bar (Date Posted, Experience level, Easy Apply, ...) — we don't
-// know the wrapping <ul>'s own class name, so we find it via a filter pill we do know the
-// markup for and insert as its sibling, rather than guessing a container selector.
-const FILTER_PILL_SELECTOR = 'li.search-reusables__primary-filter'
 const INJECTED_ATTR = 'data-applyw-toggles-injected'
 
 interface ToggleConfig {
@@ -56,8 +53,7 @@ function createTogglePill(config: ToggleConfig, isChecked: boolean, onToggle: (n
 // filter bar. `onSettingsChanged` is called after a toggle's new value is persisted, so
 // the caller can re-run hidden-state checks against the whole card list.
 export async function injectFilterToggles(onSettingsChanged: () => void): Promise<void> {
-  const filterPills = document.querySelectorAll(FILTER_PILL_SELECTOR)
-  const filterList = filterPills[filterPills.length - 1]?.parentElement
+  const filterList = findFilterBar()
   if (!filterList || filterList.hasAttribute(INJECTED_ATTR)) return
 
   const settings = await getSettings()

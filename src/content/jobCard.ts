@@ -1,10 +1,12 @@
 import { blockCompany, hideJob, type Settings } from '../shared/storage'
+import { ensureLanguageDetected, getCachedLanguage } from './language'
 
 export const JOB_CARD_SELECTOR = 'li[data-occludable-job-id]'
 
 const ACTION_BUTTON_CLASS = 'applyw-action-button'
 const COMPANY_NAME_SELECTOR = '.artdeco-entity-lockup__subtitle'
 const FOOTER_ITEM_SELECTOR = '.job-card-container__footer-item'
+const TITLE_SELECTOR = '.job-card-list__title--link'
 
 export function getJobId(card: Element): string | null {
   return card.getAttribute('data-occludable-job-id')
@@ -12,6 +14,14 @@ export function getJobId(card: Element): string | null {
 
 export function getCompanyName(card: Element): string | null {
   const text = card.querySelector(COMPANY_NAME_SELECTOR)?.textContent
+  return text ? text.trim() : null
+}
+
+// The search-results card only ever renders the title (no description text), so language
+// detection runs on this alone. Titles are short, which chrome.i18n.detectLanguage is
+// less reliable on than a full paragraph — treat its guess as a heuristic, not a fact.
+export function getJobTitle(card: Element): string | null {
+  const text = card.querySelector(TITLE_SELECTOR)?.textContent
   return text ? text.trim() : null
 }
 
@@ -102,7 +112,9 @@ export function applyHiddenState(
   card: HTMLElement,
   hiddenJobIds: Set<string>,
   blockedCompanies: Set<string>,
-  settings: Settings
+  settings: Settings,
+  selectedLanguages: Set<string>,
+  onLanguageDetected: () => void
 ): void {
   const jobId = getJobId(card)
   const companyName = getCompanyName(card)
@@ -110,7 +122,19 @@ export function applyHiddenState(
   const isBlockedCompany = companyName !== null && blockedCompanies.has(normalizeCompanyName(companyName))
   const isHiddenApplied = settings.hideApplied && hasFooterState(card, 'Applied')
   const isHiddenViewed = settings.hideViewed && hasFooterState(card, 'Viewed')
+
+  // Only hide on a positive, known mismatch — a job whose language hasn't resolved yet
+  // (or couldn't be detected) stays visible rather than being hidden on missing data.
+  let isHiddenByLanguage = false
+  if (jobId && selectedLanguages.size > 0) {
+    const title = getJobTitle(card)
+    if (title) ensureLanguageDetected(jobId, title, onLanguageDetected)
+    const detectedLanguage = getCachedLanguage(jobId)
+    isHiddenByLanguage = detectedLanguage != null && !selectedLanguages.has(detectedLanguage)
+  }
+
   // Set unconditionally (not just hide) so a recycled card correctly ends up visible
   // when reused for a job that isn't hidden/blocked.
-  card.style.display = isHiddenJob || isBlockedCompany || isHiddenApplied || isHiddenViewed ? 'none' : ''
+  card.style.display =
+    isHiddenJob || isBlockedCompany || isHiddenApplied || isHiddenViewed || isHiddenByLanguage ? 'none' : ''
 }

@@ -1,6 +1,7 @@
 const HIDDEN_JOBS_KEY = 'applyw:hiddenJobIds'
 const BLOCKED_COMPANIES_KEY = 'applyw:blockedCompanies'
 const SETTINGS_KEY = 'applyw:settings'
+const SELECTED_LANGUAGES_KEY = 'applyw:selectedLanguages'
 
 async function getStoredSet(key: string): Promise<Set<string>> {
   const result = await chrome.storage.local.get(key)
@@ -46,4 +47,17 @@ export async function setSetting<K extends keyof Settings>(key: K, value: Settin
   const settings = await getSettings()
   settings[key] = value
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings })
+}
+
+// The set of languages to show (empty = no language filtering, show everything). Unlike
+// hidden jobs/blocked companies, the whole selection is replaced at once (the filter
+// dropdown commits its staged checkboxes together via Apply), not added/removed one at a time.
+export async function getSelectedLanguages(): Promise<Set<string>> {
+  const result = await chrome.storage.local.get(SELECTED_LANGUAGES_KEY)
+  const codes: string[] = result[SELECTED_LANGUAGES_KEY] ?? []
+  return new Set(codes)
+}
+
+export async function setSelectedLanguages(languageCodes: Set<string>): Promise<void> {
+  await chrome.storage.local.set({ [SELECTED_LANGUAGES_KEY]: Array.from(languageCodes) })
 }
