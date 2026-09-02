@@ -1,21 +1,77 @@
-# ApplyW — Extension
+<div align="center">
+  <img src="src/assets/applyw-logo.png" alt="ApplyW logo" width="96" height="96">
 
-Chrome extension (Manifest V3) that declutters your job-board browsing:
-hides listings you've already seen or applied to, filters by language,
-and lets you block companies from ever showing up again.
+  # ApplyW
+
+  **Declutter your LinkedIn job search — entirely on your device.**
+
+  [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
+  [![Manifest V3](https://img.shields.io/badge/manifest-v3-1c6feb.svg)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+  [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#status)
+  [![PRs welcome](https://img.shields.io/badge/PRs-welcome-1c6feb.svg)](https://github.com/ApplyW/extension/issues)
+</div>
+
+---
+
+LinkedIn's job search gets noisy fast: postings you've already seen or applied
+to keep resurfacing, listings show up in languages you don't read, and there's
+no quick way to stop seeing a company again. ApplyW is a small Chrome
+extension that fixes that, directly on the search results page — no account,
+no server, no data leaving your browser.
+
+## Features
+
+- **Hide** any job with one click — it stays hidden across reloads
+- **Block a company** — every listing from them disappears, immediately and from then on
+- **Hide Applied / Hide Viewed** toggles, right next to LinkedIn's own filters (Date Posted, Experience level, ...)
+- **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
+- **Popup dashboard** — see and undo everything you've blocked, and clear hidden jobs, in one place
+
+## Install
+
+**Chrome Web Store:** 🚧 not published yet — see [Status](#status).
+
+**From source, in the meantime:**
+
+```bash
+git clone https://github.com/ApplyW/extension.git
+cd extension
+npm install
+npm run build
+```
+
+Then in Chrome: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the `dist/` folder.
+
+## Privacy
+
+Everything runs locally. ApplyW has no backend, no analytics, no account, and
+requests exactly one permission (`storage`) beyond reading the LinkedIn jobs
+pages it runs on. Hidden jobs, blocked companies, and your filter settings
+are saved in your browser's own extension storage and never sent anywhere.
+Full details: [Privacy Policy](./PRIVACY.md).
 
 ## Status
-🚧 Early development — not yet published to the Chrome Web Store.
 
-## Stack
-TypeScript, React, Vite, chrome.storage / ApplyW backend for sync.
+Early and free. The plan is to earn real users and real feedback on the core
+experience before spending time on anything like account sync or paid
+tiers — not because those are ruled out, but because building them before
+anyone's asked for them would be solving a problem nobody has yet.
 
-## Setup
-\`\`\`bash
+## Development
+
+See [CLAUDE.md](./CLAUDE.md) for the project structure and conventions.
+
+```bash
 npm install
-npm run dev
-\`\`\`
-Load the `dist/` folder as an unpacked extension via `chrome://extensions`.
+npm run dev     # Vite dev server with HMR
+npm run build   # production build, outputs to dist/
+```
+
+## Contributing
+
+Issues and pull requests are welcome — [open an issue](https://github.com/ApplyW/extension/issues)
+for a bug or a feature idea.
 
 ## License
+
 MIT — see [LICENSE](./LICENSE).

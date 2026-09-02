@@ -6,10 +6,23 @@ export default defineManifest({
   name: 'ApplyW',
   description: 'Declutters LinkedIn job listings: hides seen/applied jobs, filters by language, blocks companies.',
   version: pkg.version,
+  homepage_url: 'https://github.com/ApplyW/extension',
+  icons: {
+    16: 'src/assets/icons/icon16.png',
+    32: 'src/assets/icons/icon32.png',
+    48: 'src/assets/icons/icon48.png',
+    128: 'src/assets/icons/icon128.png'
+  },
   permissions: ['storage'],
   action: {
     default_popup: 'src/popup/index.html',
-    default_title: 'ApplyW'
+    default_title: 'ApplyW',
+    default_icon: {
+      16: 'src/assets/icons/icon16.png',
+      32: 'src/assets/icons/icon32.png',
+      48: 'src/assets/icons/icon48.png',
+      128: 'src/assets/icons/icon128.png'
+    }
   },
   content_scripts: [
     {
