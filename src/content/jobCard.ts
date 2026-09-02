@@ -1,9 +1,10 @@
-import { blockCompany, hideJob } from '../shared/storage'
+import { blockCompany, hideJob, type Settings } from '../shared/storage'
 
 export const JOB_CARD_SELECTOR = 'li[data-occludable-job-id]'
 
 const ACTION_BUTTON_CLASS = 'applyw-action-button'
 const COMPANY_NAME_SELECTOR = '.artdeco-entity-lockup__subtitle'
+const FOOTER_ITEM_SELECTOR = '.job-card-container__footer-item'
 
 export function getJobId(card: Element): string | null {
   return card.getAttribute('data-occludable-job-id')
@@ -22,6 +23,17 @@ export function normalizeCompanyName(name: string): string {
 
 function hideCard(card: HTMLElement): void {
   card.style.display = 'none'
+}
+
+// LinkedIn shows badges like "Viewed" and "Applied" as short text in the card footer.
+// Matched by text (only "Viewed" has been seen in real markup so far) rather than a
+// state-specific class, and `startsWith` covers a possible "Applied 2d ago" variant.
+function hasFooterState(card: Element, label: string): boolean {
+  const items = card.querySelectorAll(FOOTER_ITEM_SELECTOR)
+  return Array.from(items).some((item) => {
+    const text = item.textContent?.trim()
+    return text === label || text?.startsWith(`${label} `)
+  })
 }
 
 function reportStorageError(action: string, error: unknown): void {
@@ -89,13 +101,16 @@ export function injectActionButtons(card: HTMLElement): void {
 export function applyHiddenState(
   card: HTMLElement,
   hiddenJobIds: Set<string>,
-  blockedCompanies: Set<string>
+  blockedCompanies: Set<string>,
+  settings: Settings
 ): void {
   const jobId = getJobId(card)
   const companyName = getCompanyName(card)
   const isHiddenJob = jobId !== null && hiddenJobIds.has(jobId)
   const isBlockedCompany = companyName !== null && blockedCompanies.has(normalizeCompanyName(companyName))
+  const isHiddenApplied = settings.hideApplied && hasFooterState(card, 'Applied')
+  const isHiddenViewed = settings.hideViewed && hasFooterState(card, 'Viewed')
   // Set unconditionally (not just hide) so a recycled card correctly ends up visible
   // when reused for a job that isn't hidden/blocked.
-  card.style.display = isHiddenJob || isBlockedCompany ? 'none' : ''
+  card.style.display = isHiddenJob || isBlockedCompany || isHiddenApplied || isHiddenViewed ? 'none' : ''
 }

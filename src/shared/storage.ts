@@ -1,5 +1,6 @@
 const HIDDEN_JOBS_KEY = 'applyw:hiddenJobIds'
 const BLOCKED_COMPANIES_KEY = 'applyw:blockedCompanies'
+const SETTINGS_KEY = 'applyw:settings'
 
 async function getStoredSet(key: string): Promise<Set<string>> {
   const result = await chrome.storage.local.get(key)
@@ -28,3 +29,21 @@ export const blockCompany = (normalizedCompanyName: string): Promise<void> =>
   addToStoredSet(BLOCKED_COMPANIES_KEY, normalizedCompanyName)
 export const unblockCompany = (normalizedCompanyName: string): Promise<void> =>
   removeFromStoredSet(BLOCKED_COMPANIES_KEY, normalizedCompanyName)
+
+export interface Settings {
+  hideApplied: boolean
+  hideViewed: boolean
+}
+
+const DEFAULT_SETTINGS: Settings = { hideApplied: false, hideViewed: false }
+
+export async function getSettings(): Promise<Settings> {
+  const result = await chrome.storage.local.get(SETTINGS_KEY)
+  return { ...DEFAULT_SETTINGS, ...(result[SETTINGS_KEY] as Partial<Settings> | undefined) }
+}
+
+export async function setSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
+  const settings = await getSettings()
+  settings[key] = value
+  await chrome.storage.local.set({ [SETTINGS_KEY]: settings })
+}

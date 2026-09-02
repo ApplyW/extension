@@ -1,14 +1,20 @@
-import { getBlockedCompanies, getHiddenJobIds } from '../shared/storage'
+import { getBlockedCompanies, getHiddenJobIds, getSettings } from '../shared/storage'
 import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
+import { injectFilterToggles } from './filterToggles'
 
 console.log('ApplyW loaded')
 
 async function scanForCards(): Promise<void> {
-  const [hiddenJobIds, blockedCompanies] = await Promise.all([getHiddenJobIds(), getBlockedCompanies()])
+  const [hiddenJobIds, blockedCompanies, settings] = await Promise.all([
+    getHiddenJobIds(),
+    getBlockedCompanies(),
+    getSettings()
+  ])
   document.querySelectorAll<HTMLElement>(JOB_CARD_SELECTOR).forEach((card) => {
-    applyHiddenState(card, hiddenJobIds, blockedCompanies)
+    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings)
     injectActionButtons(card)
   })
+  void injectFilterToggles(() => void scanForCards())
 }
 
 // Batches bursts of mutations into a single rescan. Triggers on *any* subtree change,
