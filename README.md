@@ -29,6 +29,7 @@ page — no account, no server, no data leaving your browser.
 - **Block a company** — every listing from them disappears, immediately and from then on
 - **Hide Applied / Hide Viewed** toggles, right next to LinkedIn's own filters (Date Posted, Experience level, ...)
 - **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
+- **Keyword filter** — require or exclude specific words from a job's title or description (e.g. only show listings mentioning "Java", or hide anything mentioning "Junior")
 - **Popup dashboard** — see and undo everything you've blocked, and clear hidden jobs, in one place
 
 ## Install
