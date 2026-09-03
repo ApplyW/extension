@@ -131,6 +131,46 @@ section + section {
   color: var(--aw-text-muted);
 }
 
+.search-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.search-input {
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 26px 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--aw-border);
+  background: transparent;
+  color: CanvasText;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--aw-blue);
+}
+
+.search-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 26px;
+  border: none;
+  background: transparent;
+  color: var(--aw-text-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  color: var(--aw-blue);
+}
+
 .company-list {
   list-style: none;
   margin: 0;

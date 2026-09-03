@@ -6,6 +6,8 @@ import pkg from '../../package.json'
 const ISSUES_URL = 'https://github.com/ApplyW/extension/issues'
 // Keep in sync with manifest.config.ts's content_scripts match pattern.
 const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search/'
+// Below this many blocked companies, a search box is more clutter than it's worth.
+const COMPANY_SEARCH_THRESHOLD = 5
 
 function isJobsSearchUrl(url: string | undefined): boolean {
   return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
@@ -15,6 +17,7 @@ export function Popup() {
   const [blockedCompanies, setBlockedCompanies] = useState<string[]>([])
   const [hiddenJobCount, setHiddenJobCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [companyQuery, setCompanyQuery] = useState('')
   // Whether the active tab is already on LinkedIn's job search page — checked once per
   // popup open, separately from the storage-backed state above, so it doesn't need to
   // re-run after unrelated actions like unblocking a company.
@@ -53,6 +56,13 @@ export function Popup() {
     void clearHiddenJobs().then(reload)
   }
 
+  // Company names are already stored normalized/lowercased (see storage.ts), so the typed
+  // query only needs its own trim + lowercase to match.
+  const normalizedQuery = companyQuery.trim().toLowerCase()
+  const filteredCompanies = normalizedQuery
+    ? blockedCompanies.filter((company) => company.includes(normalizedQuery))
+    : blockedCompanies
+
   return (
     <div className="popup">
       <header className="header">
@@ -87,16 +97,43 @@ export function Popup() {
             {blockedCompanies.length === 0 ? (
               <p className="empty">No companies blocked yet.</p>
             ) : (
-              <ul className="company-list">
-                {blockedCompanies.map((company) => (
-                  <li key={company}>
-                    <span>{company}</span>
-                    <button type="button" className="ghost-button" onClick={() => handleUnblock(company)}>
-                      Unblock
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                {blockedCompanies.length > COMPANY_SEARCH_THRESHOLD && (
+                  <div className="search-wrap">
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="Search blocked companies"
+                      value={companyQuery}
+                      onChange={(event) => setCompanyQuery(event.target.value)}
+                    />
+                    {companyQuery && (
+                      <button
+                        type="button"
+                        className="search-clear"
+                        aria-label="Clear search"
+                        onClick={() => setCompanyQuery('')}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )}
+                {filteredCompanies.length === 0 ? (
+                  <p className="empty">No blocked companies match "{companyQuery.trim()}".</p>
+                ) : (
+                  <ul className="company-list">
+                    {filteredCompanies.map((company) => (
+                      <li key={company}>
+                        <span>{company}</span>
+                        <button type="button" className="ghost-button" onClick={() => handleUnblock(company)}>
+                          Unblock
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </section>
 
