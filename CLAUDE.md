@@ -82,17 +82,21 @@ Types:
 Description: imperative present tense ("add" not "added"), state the intention not the implementation,
 include ticket number if there is one.
 
-Body: motivation and contrast with previous behavior, same tense rules.
+Body: a short bullet list of what changed, written for a non-technical reader — what the
+feature/fix does, not how it's implemented. No prose paragraphs, no internal rationale, no
+mention of specific functions/selectors/permissions/etc. — that detail belongs in code
+comments or CLAUDE.md, not the commit body.
 
-Footer: breaking change details, ticket/issue links. If the commit was largely AI-assisted, note it here.
+Footer: breaking change details, ticket/issue links, then the attribution trailer (see below).
 
 Example:
 ```
-feat(content-script): hide job cards and persist across reloads
+feat(content-script): block companies, hiding their cards on sight
 
-Injects a Hide button into each job card's action bar. Hidden job ids are
-stored in chrome.storage.local so cards stay hidden after a reload, and a
-MutationObserver re-applies hidden state as infinite scroll loads new cards.
+- Block button on each job card
+- Blocked companies persisted in chrome.storage.local
+- Cards from blocked companies hidden automatically
 
-Co-authored-with: Claude (Anthropic)
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_<id>
 ```
