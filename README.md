@@ -3,6 +3,8 @@
 
   **Apply Wisely**: Declutter your LinkedIn job search — entirely on your device.
 
+  [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/imllbmbpfpgnibchclonahimmkjanjhp?color=1c6feb&label=chrome%20web%20store)](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp)
+  [![Latest release](https://img.shields.io/github/v/release/ApplyW/extension?color=1c6feb)](https://github.com/ApplyW/extension/releases/latest)
   [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
   [![Manifest V3](https://img.shields.io/badge/manifest-v3-1c6feb.svg)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
   [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#status)
@@ -27,9 +29,11 @@ page — no account, no server, no data leaving your browser.
 
 ## Install
 
-**Chrome Web Store:** 🚧 not published yet — see [Status](#status).
+**Chrome Web Store:** [Install ApplyW](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp)
 
-**From source, in the meantime:**
+**From a release:** download `applyw.zip` from the [latest release](https://github.com/ApplyW/extension/releases/latest), unzip it, then in Chrome: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the unzipped folder.
+
+**From source:**
 
 ```bash
 git clone https://github.com/ApplyW/extension.git
