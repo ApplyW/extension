@@ -1,4 +1,4 @@
-import { blockCompany, hideJob, type Settings } from '../shared/storage'
+import { hideJob, type Settings } from '../shared/storage'
 import { ensureLanguageDetected, getCachedLanguage } from './language'
 import { getJobDescription } from './jobDescriptions'
 
@@ -161,7 +161,10 @@ function createActionButton(label: string, ariaLabel: string, onClick: () => voi
   return button
 }
 
-// Injects Hide + Block-company buttons next to LinkedIn's own Dismiss button.
+// Injects a Hide button next to LinkedIn's own Dismiss button. Block lives only on the
+// opened job's detail pane (see topCardBlockButton.ts) — blocking a company is a bigger,
+// less-undoable action than hiding one job, so it's reserved for the view where you've
+// actually looked at the company, not a one-click option on every compact list row.
 // LinkedIn virtualizes this list: a card's inner content (including the actions
 // container) can be torn down and rebuilt as it scrolls in/out of view, so "already
 // processed" is checked against the live container's own children rather than a flag
@@ -179,17 +182,6 @@ export function injectActionButtons(card: HTMLElement): void {
         .catch((error) => reportStorageError('hide job', error))
     })
   )
-
-  const companyName = getCompanyName(card)
-  if (companyName) {
-    actionsContainer.appendChild(
-      createActionButton('Block', `Block ${companyName}`, () => {
-        void blockCompany(normalizeCompanyName(companyName))
-          .then(() => hideCard(card))
-          .catch((error) => reportStorageError(`block company ${companyName}`, error))
-      })
-    )
-  }
 }
 
 export function applyHiddenState(
