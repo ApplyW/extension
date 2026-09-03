@@ -19,6 +19,10 @@ no quick way to stop seeing a company again. **ApplyW** — *Apply Wisely* — i
 a small Chrome extension that fixes that, directly on the search results
 page — no account, no server, no data leaving your browser.
 
+> Works on LinkedIn's job search results page
+> (`linkedin.com/jobs/search/...`) — other LinkedIn job pages aren't
+> supported yet.
+
 ## Features
 
 - **Hide** any job with one click — it stays hidden across reloads
