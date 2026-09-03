@@ -26,7 +26,10 @@ export default defineManifest({
   },
   content_scripts: [
     {
-      matches: ['https://www.linkedin.com/jobs/*'],
+      // Scoped to /jobs/search/ specifically, not all of /jobs/* — other LinkedIn job
+      // paths (e.g. /jobs/search-job/) use a different DOM that this code doesn't handle
+      // and injecting into it did more harm than good.
+      matches: ['https://www.linkedin.com/jobs/search/*'],
       js: ['src/content/index.ts'],
       run_at: 'document_idle'
     },
@@ -35,7 +38,7 @@ export default defineManifest({
     // response bodies in Chrome). Must load before LinkedIn's app code starts making
     // requests, hence document_start. See src/content/pageBridge.ts for why this exists.
     {
-      matches: ['https://www.linkedin.com/jobs/*'],
+      matches: ['https://www.linkedin.com/jobs/search/*'],
       js: ['src/content/pageBridge.ts'],
       run_at: 'document_start',
       world: 'MAIN'

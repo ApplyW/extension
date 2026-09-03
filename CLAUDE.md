@@ -11,7 +11,7 @@ that pun, not as an unexplained abbreviation.
 - **Language**: TypeScript
 - **Build**: Vite + `@crxjs/vite-plugin` (CRXJS)
 - **Platform**: Chrome Extension, Manifest V3
-- **Scope today**: content script (`https://www.linkedin.com/jobs/*`) + a React popup — no background service worker yet
+- **Scope today**: content script (`https://www.linkedin.com/jobs/search/*` — not all of `/jobs/*`; other job paths like `/jobs/search-job/` use a different DOM this code doesn't handle) + a React popup — no background service worker yet
 - **UI**: React 19, only used for the popup (`src/popup/`); the content script stays framework-free DOM manipulation
 - **Persistence**: `chrome.storage.local`, capped at 10 MB without the `unlimitedStorage` permission (not requested) — not a practical constraint for this data (short id/company strings)
 

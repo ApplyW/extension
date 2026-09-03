@@ -28,7 +28,7 @@ device, and is deleted automatically if you remove the extension.
 ApplyW requests:
 
 - **`storage`** — to save the preferences above locally in your browser.
-- **Access to `linkedin.com/jobs/*` pages** — to read the content of job
+- **Access to `linkedin.com/jobs/search/*` pages** — to read the content of job
   listings on the page (title, company name, language) so it can hide,
   block, and filter them, and to add its Hide / Block / filter controls to
   the page. This all happens locally, in your browser; nothing about the
