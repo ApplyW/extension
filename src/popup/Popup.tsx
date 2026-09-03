@@ -4,11 +4,21 @@ import logoUrl from '../assets/applyw-logo.png'
 import pkg from '../../package.json'
 
 const ISSUES_URL = 'https://github.com/ApplyW/extension/issues'
+// Keep in sync with manifest.config.ts's content_scripts match pattern.
+const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search/'
+
+function isJobsSearchUrl(url: string | undefined): boolean {
+  return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
+}
 
 export function Popup() {
   const [blockedCompanies, setBlockedCompanies] = useState<string[]>([])
   const [hiddenJobCount, setHiddenJobCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  // Whether the active tab is already on LinkedIn's job search page — checked once per
+  // popup open, separately from the storage-backed state above, so it doesn't need to
+  // re-run after unrelated actions like unblocking a company.
+  const [isOnJobsSearchPage, setIsOnJobsSearchPage] = useState(false)
 
   const reload = useCallback(async () => {
     const [companies, hiddenJobIds] = await Promise.all([getBlockedCompanies(), getHiddenJobIds()])
@@ -20,6 +30,20 @@ export function Popup() {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    // No "tabs" permission needed: content_scripts.matches already implies host
+    // permission for this URL, which is enough for chrome.tabs.query() to populate
+    // `url` on the matching tab (it's simply omitted for tabs outside our permissions,
+    // which reads here as "not on the jobs search page" — a safe default either way).
+    void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+      setIsOnJobsSearchPage(isJobsSearchUrl(tab?.url))
+    })
+  }, [])
+
+  const handleOpenJobsSearch = (): void => {
+    void chrome.tabs.create({ url: JOBS_SEARCH_URL })
+  }
 
   const handleUnblock = (company: string): void => {
     void unblockCompany(company).then(reload)
@@ -41,6 +65,18 @@ export function Popup() {
           <div className="version">v{pkg.version}</div>
         </div>
       </header>
+
+      <section className="cta">
+        {isOnJobsSearchPage ? (
+          <p className="cta-status">
+            <span aria-hidden="true">✓</span> Filters are active on this page
+          </p>
+        ) : (
+          <button type="button" className="primary-button" onClick={handleOpenJobsSearch}>
+            Open LinkedIn Jobs <span aria-hidden="true">↗</span>
+          </button>
+        )}
+      </section>
 
       {isLoading ? (
         <p className="empty loading">Loading…</p>
