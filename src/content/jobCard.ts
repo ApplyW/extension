@@ -5,6 +5,9 @@ import { getJobDescription } from './jobDescriptions'
 export const JOB_CARD_SELECTOR = 'li[data-occludable-job-id]'
 
 const ACTION_BUTTON_CLASS = 'applyw-action-button'
+// LinkedIn's own per-card "X" dismiss button — aria-label is "Dismiss <job title> job", so
+// matched by prefix rather than the full label.
+const NATIVE_DISMISS_BUTTON_SELECTOR = 'button[aria-label^="Dismiss "]'
 const COMPANY_NAME_SELECTOR = '.artdeco-entity-lockup__subtitle'
 const FOOTER_ITEM_SELECTOR = '.job-card-container__footer-item'
 const LANGUAGE_BADGE_CLASS = 'applyw-language-badge'
@@ -161,10 +164,13 @@ function createActionButton(label: string, ariaLabel: string, onClick: () => voi
   return button
 }
 
-// Injects a Hide button next to LinkedIn's own Dismiss button. Block lives only on the
-// opened job's detail pane (see topCardBlockButton.ts) — blocking a company is a bigger,
-// less-undoable action than hiding one job, so it's reserved for the view where you've
-// actually looked at the company, not a one-click option on every compact list row.
+// Injects a Hide button in place of LinkedIn's own Dismiss ("X") button, which is hidden —
+// it's a separate, LinkedIn-side hide mechanism that duplicates ours without going through
+// our own storage, so keeping both visible would just be two different "hide" buttons that
+// do different things. Block lives only on the opened job's detail pane (see
+// topCardBlockButton.ts) — blocking a company is a bigger, less-undoable action than hiding
+// one job, so it's reserved for the view where you've actually looked at the company, not a
+// one-click option on every compact list row.
 // LinkedIn virtualizes this list: a card's inner content (including the actions
 // container) can be torn down and rebuilt as it scrolls in/out of view, so "already
 // processed" is checked against the live container's own children rather than a flag
@@ -173,6 +179,12 @@ export function injectActionButtons(card: HTMLElement): void {
   const jobId = getJobId(card)
   const actionsContainer = card.querySelector('.job-card-list__actions-container')
   if (!jobId || !actionsContainer) return
+
+  // Checked unconditionally (not just on first injection) since LinkedIn's recycling could
+  // in principle restore it independently of our own buttons.
+  const dismissButton = actionsContainer.querySelector<HTMLElement>(NATIVE_DISMISS_BUTTON_SELECTOR)
+  if (dismissButton) dismissButton.style.display = 'none'
+
   if (actionsContainer.querySelector(`.${ACTION_BUTTON_CLASS}`)) return
 
   actionsContainer.appendChild(
