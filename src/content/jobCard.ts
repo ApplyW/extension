@@ -55,6 +55,18 @@ function renderLanguageBadge(card: HTMLElement, languageCode: string | null): vo
   if (badge.textContent !== languageCode) badge.textContent = languageCode
 }
 
+// The language badge (see renderLanguageBadge) lives *inside* the title link as a child
+// element, so a plain textContent read would pick up its 2-letter code too — cloned and
+// stripped out here so keyword matching only ever sees the actual title text.
+export function getJobTitle(card: Element): string | null {
+  const titleLink = card.querySelector(TITLE_LINK_SELECTOR)
+  if (!titleLink) return null
+  const clone = titleLink.cloneNode(true) as Element
+  clone.querySelector(`.${LANGUAGE_BADGE_CLASS}`)?.remove()
+  const text = clone.textContent
+  return text ? text.trim() : null
+}
+
 // Companies are matched case-insensitively so "R+V Versicherung" and a differently-cased
 // mention of the same company are treated as one block entry.
 export function normalizeCompanyName(name: string): string {
@@ -78,6 +90,48 @@ function hasFooterState(card: Element, label: string): boolean {
 
 function reportStorageError(action: string, error: unknown): void {
   console.error(`ApplyW: failed to ${action}`, error)
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Whole-word match (case-insensitive) so "Java" doesn't match inside "JavaScript" — not a
+// stemmed/partial match, so "Junior" also won't match "Juniors".
+function containsAnyWord(lowerText: string, words: Set<string>): boolean {
+  return Array.from(words).some((word) => new RegExp(`\\b${escapeRegExp(word)}\\b`).test(lowerText))
+}
+
+// Matches against the title (always known immediately) and the description (arrives
+// later, if at all — see jobDescriptions.ts) — a word in either counts. Same "only hide on
+// a positive, known mismatch" rule as language filtering below applies per-criterion:
+// - must-exclude can hide as soon as the title alone matches; a word only in a
+//   not-yet-arrived description can't cause a false hide.
+// - must-include can only fail once the description has arrived (or never comes) — a title
+//   that doesn't match yet might still be satisfied by the description.
+function isHiddenByKeywords(
+  card: Element,
+  jobId: string | null,
+  mustIncludeWords: Set<string>,
+  mustExcludeWords: Set<string>
+): boolean {
+  if (mustIncludeWords.size === 0 && mustExcludeWords.size === 0) return false
+
+  const title = getJobTitle(card)
+  const description = jobId ? getJobDescription(jobId) : undefined
+  const lowerTitle = title ? title.toLowerCase() : ''
+  const lowerDescription = description?.toLowerCase()
+
+  const matchesInclude =
+    containsAnyWord(lowerTitle, mustIncludeWords) ||
+    (lowerDescription !== undefined && containsAnyWord(lowerDescription, mustIncludeWords))
+  const matchesExclude =
+    containsAnyWord(lowerTitle, mustExcludeWords) ||
+    (lowerDescription !== undefined && containsAnyWord(lowerDescription, mustExcludeWords))
+
+  const failsMustInclude = mustIncludeWords.size > 0 && !matchesInclude && lowerDescription !== undefined
+  const failsMustExclude = mustExcludeWords.size > 0 && matchesExclude
+  return failsMustInclude || failsMustExclude
 }
 
 function createActionButton(label: string, ariaLabel: string, onClick: () => void): HTMLButtonElement {
@@ -143,7 +197,9 @@ export function applyHiddenState(
   hiddenJobIds: Set<string>,
   blockedCompanies: Set<string>,
   settings: Settings,
-  selectedLanguages: Set<string>
+  selectedLanguages: Set<string>,
+  mustIncludeWords: Set<string>,
+  mustExcludeWords: Set<string>
 ): void {
   const jobId = getJobId(card)
   const companyName = getCompanyName(card)
@@ -168,9 +224,17 @@ export function applyHiddenState(
   // (or couldn't be detected) stays visible rather than being hidden on missing data.
   const isHiddenByLanguage =
     selectedLanguages.size > 0 && detectedLanguage !== null && !selectedLanguages.has(detectedLanguage)
+  const isHiddenByKeywordFilter = isHiddenByKeywords(card, jobId, mustIncludeWords, mustExcludeWords)
 
   // Set unconditionally (not just hide) so a recycled card correctly ends up visible
   // when reused for a job that isn't hidden/blocked.
   card.style.display =
-    isHiddenJob || isBlockedCompany || isHiddenApplied || isHiddenViewed || isHiddenByLanguage ? 'none' : ''
+    isHiddenJob ||
+    isBlockedCompany ||
+    isHiddenApplied ||
+    isHiddenViewed ||
+    isHiddenByLanguage ||
+    isHiddenByKeywordFilter
+      ? 'none'
+      : ''
 }

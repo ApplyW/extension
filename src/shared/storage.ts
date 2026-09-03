@@ -2,6 +2,8 @@ const HIDDEN_JOBS_KEY = 'applyw:hiddenJobIds'
 const BLOCKED_COMPANIES_KEY = 'applyw:blockedCompanies'
 const SETTINGS_KEY = 'applyw:settings'
 const SELECTED_LANGUAGES_KEY = 'applyw:selectedLanguages'
+const MUST_INCLUDE_WORDS_KEY = 'applyw:mustIncludeWords'
+const MUST_EXCLUDE_WORDS_KEY = 'applyw:mustExcludeWords'
 
 async function getStoredSet(key: string): Promise<Set<string>> {
   const result = await chrome.storage.local.get(key)
@@ -60,4 +62,28 @@ export async function getSelectedLanguages(): Promise<Set<string>> {
 
 export async function setSelectedLanguages(languageCodes: Set<string>): Promise<void> {
   await chrome.storage.local.set({ [SELECTED_LANGUAGES_KEY]: Array.from(languageCodes) })
+}
+
+// Words a job's description must contain (empty = no filtering). Same whole-selection-
+// replaced-via-Apply pattern as selected languages. Stored normalized (trimmed, lowercased)
+// for matching — same known rough edge as blocked company names above.
+export async function getMustIncludeWords(): Promise<Set<string>> {
+  const result = await chrome.storage.local.get(MUST_INCLUDE_WORDS_KEY)
+  const words: string[] = result[MUST_INCLUDE_WORDS_KEY] ?? []
+  return new Set(words)
+}
+
+export async function setMustIncludeWords(words: Set<string>): Promise<void> {
+  await chrome.storage.local.set({ [MUST_INCLUDE_WORDS_KEY]: Array.from(words) })
+}
+
+// Words that hide a job if its description contains any of them.
+export async function getMustExcludeWords(): Promise<Set<string>> {
+  const result = await chrome.storage.local.get(MUST_EXCLUDE_WORDS_KEY)
+  const words: string[] = result[MUST_EXCLUDE_WORDS_KEY] ?? []
+  return new Set(words)
+}
+
+export async function setMustExcludeWords(words: Set<string>): Promise<void> {
+  await chrome.storage.local.set({ [MUST_EXCLUDE_WORDS_KEY]: Array.from(words) })
 }

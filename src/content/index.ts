@@ -1,7 +1,15 @@
-import { getBlockedCompanies, getHiddenJobIds, getSelectedLanguages, getSettings } from '../shared/storage'
+import {
+  getBlockedCompanies,
+  getHiddenJobIds,
+  getMustExcludeWords,
+  getMustIncludeWords,
+  getSelectedLanguages,
+  getSettings
+} from '../shared/storage'
 import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
 import { injectFilterToggles } from './filterToggles'
 import { injectLanguageFilter } from './languageFilter'
+import { injectKeywordFilter } from './keywordFilter'
 import { listenForJobDescriptions } from './jobDescriptions'
 
 console.log('ApplyW loaded')
@@ -16,18 +24,22 @@ function scheduleRescan(): void {
 }
 
 async function scanForCards(): Promise<void> {
-  const [hiddenJobIds, blockedCompanies, settings, selectedLanguages] = await Promise.all([
-    getHiddenJobIds(),
-    getBlockedCompanies(),
-    getSettings(),
-    getSelectedLanguages()
-  ])
+  const [hiddenJobIds, blockedCompanies, settings, selectedLanguages, mustIncludeWords, mustExcludeWords] =
+    await Promise.all([
+      getHiddenJobIds(),
+      getBlockedCompanies(),
+      getSettings(),
+      getSelectedLanguages(),
+      getMustIncludeWords(),
+      getMustExcludeWords()
+    ])
   document.querySelectorAll<HTMLElement>(JOB_CARD_SELECTOR).forEach((card) => {
-    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages)
+    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages, mustIncludeWords, mustExcludeWords)
     injectActionButtons(card)
   })
   void injectFilterToggles(scheduleRescan)
   void injectLanguageFilter(scheduleRescan)
+  void injectKeywordFilter(scheduleRescan)
 }
 
 // Triggers on *any* subtree change under <body>, not just whole new cards being added:
