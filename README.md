@@ -60,9 +60,9 @@ Full details: [Privacy Policy](./PRIVACY.md).
 ## Status
 
 Early and free. The plan is to earn real users and real feedback on the core
-experience before spending time on anything like account sync or paid
-tiers — not because those are ruled out, but because building them before
-anyone's asked for them would be solving a problem nobody has yet.
+experience before spending time on anything like account sync — not because
+that's ruled out, but because building it before anyone's asked for it would
+be solving a problem nobody has yet.
 
 ## Development
 
