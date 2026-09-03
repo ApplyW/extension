@@ -1,4 +1,8 @@
 .claude
+.idea
+
+# Packaged extension zip (attached to GitHub Releases, not committed)
+*.zip
 
 # Logs
 logs
