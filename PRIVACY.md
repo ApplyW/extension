@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: September 3, 2026_
+_Last updated: September 4, 2026_
 
 ApplyW is a browser extension that runs entirely on your device. This page
 describes what it does and does not do with your data.
@@ -16,9 +16,11 @@ analytics, and makes no network requests of its own.
 The following is saved locally in your browser, via the standard
 `chrome.storage.local` extension API, and never leaves your device:
 
-- Job listing IDs you've hidden
+- Job listings you've hidden — the listing's ID, title, link, company, location,
+  and the time you hid it, so the extension can show you that list and let you
+  unhide individual jobs
 - Company names you've blocked
-- Your "Hide Applied" / "Hide Viewed" and language filter preferences
+- Your "Hide Applied" / "Hide Viewed", language, and keyword filter preferences
 
 This data is only accessible to the ApplyW extension itself, stays on your
 device, and is deleted automatically if you remove the extension.
@@ -29,9 +31,9 @@ ApplyW requests:
 
 - **`storage`** — to save the preferences above locally in your browser.
 - **Access to `linkedin.com/jobs/search/*` pages** — to read the content of job
-  listings on the page (title, company name, language) so it can hide,
-  block, and filter them, and to add its Hide / Block / filter controls to
-  the page. This all happens locally, in your browser; nothing about the
+  listings on the page (title, company name, location, description, language)
+  so it can hide, block, and filter them, and to add its Hide / Block / filter
+  controls to the page. This all happens locally, in your browser; nothing about the
   page or your activity on it is sent to ApplyW or any third party.
 
 ## Changes to this policy
