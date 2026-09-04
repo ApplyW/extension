@@ -23,8 +23,49 @@ async function removeFromStoredSet(key: string, value: string): Promise<void> {
   await chrome.storage.local.set({ [key]: Array.from(values) })
 }
 
-export const getHiddenJobIds = (): Promise<Set<string>> => getStoredSet(HIDDEN_JOBS_KEY)
-export const hideJob = (jobId: string): Promise<void> => addToStoredSet(HIDDEN_JOBS_KEY, jobId)
+export interface HiddenJob {
+  jobId: string
+  title: string
+  url: string
+  company: string
+  location: string
+  hiddenAt: number
+}
+
+// Pre-0.1.4 versions stored this key as a bare array of job id strings. Read defensively so
+// an upgrading user's already-hidden jobs stay hidden instead of silently reappearing —
+// legacy entries get placeholder details since the original title/company/location was
+// never saved, and hiddenAt 0 so they sort as the oldest entries once the popup lists them.
+function normalizeHiddenJob(value: string | HiddenJob): HiddenJob {
+  if (typeof value === 'string') {
+    return { jobId: value, title: 'Job', url: `https://www.linkedin.com/jobs/view/${value}/`, company: '', location: '', hiddenAt: 0 }
+  }
+  return value
+}
+
+export async function getHiddenJobs(): Promise<HiddenJob[]> {
+  const result = await chrome.storage.local.get(HIDDEN_JOBS_KEY)
+  const stored: (string | HiddenJob)[] = result[HIDDEN_JOBS_KEY] ?? []
+  return stored.map(normalizeHiddenJob)
+}
+
+export async function getHiddenJobIds(): Promise<Set<string>> {
+  const jobs = await getHiddenJobs()
+  return new Set(jobs.map((job) => job.jobId))
+}
+
+export async function hideJob(job: HiddenJob): Promise<void> {
+  const jobs = await getHiddenJobs()
+  if (jobs.some((existing) => existing.jobId === job.jobId)) return
+  jobs.push(job)
+  await chrome.storage.local.set({ [HIDDEN_JOBS_KEY]: jobs })
+}
+
+export async function unhideJob(jobId: string): Promise<void> {
+  const jobs = await getHiddenJobs()
+  await chrome.storage.local.set({ [HIDDEN_JOBS_KEY]: jobs.filter((job) => job.jobId !== jobId) })
+}
+
 export const clearHiddenJobs = (): Promise<void> => chrome.storage.local.remove(HIDDEN_JOBS_KEY)
 
 export const getBlockedCompanies = (): Promise<Set<string>> => getStoredSet(BLOCKED_COMPANIES_KEY)

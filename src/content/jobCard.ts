@@ -1,4 +1,4 @@
-import { hideJob, type Settings } from '../shared/storage'
+import { hideJob, type HiddenJob, type Settings } from '../shared/storage'
 import { ensureLanguageDetected, getCachedLanguage } from './language'
 import { getJobDescription } from './jobDescriptions'
 
@@ -9,6 +9,10 @@ const ACTION_BUTTON_CLASS = 'applyw-action-button'
 // matched by prefix rather than the full label.
 const NATIVE_DISMISS_BUTTON_SELECTOR = 'button[aria-label^="Dismiss "]'
 const COMPANY_NAME_SELECTOR = '.artdeco-entity-lockup__subtitle'
+// LinkedIn already combines location and workplace type into one string per <li> here
+// (e.g. "Netherlands (Remote)") — joined rather than just reading the first, in case a
+// card ever renders a second item (e.g. salary) in the same wrapper.
+const LOCATION_ITEM_SELECTOR = '.job-card-container__metadata-wrapper li'
 const FOOTER_ITEM_SELECTOR = '.job-card-container__footer-item'
 const LANGUAGE_BADGE_CLASS = 'applyw-language-badge'
 // Where the language badge gets inserted — see renderLanguageBadge.
@@ -21,6 +25,20 @@ export function getJobId(card: Element): string | null {
 export function getCompanyName(card: Element): string | null {
   const text = card.querySelector(COMPANY_NAME_SELECTOR)?.textContent
   return text ? text.trim() : null
+}
+
+export function getJobLocation(card: Element): string {
+  return Array.from(card.querySelectorAll(LOCATION_ITEM_SELECTOR))
+    .map((item) => item.textContent?.trim())
+    .filter((text): text is string => Boolean(text))
+    .join(' · ')
+}
+
+// The title link's own href carries a long tracking query string (eBP=..., trk=...) that
+// isn't meant to be stored/reused — LinkedIn's permalink format is just the job id, seen in
+// that same href's path (/jobs/view/<id>/...), so build a clean link from the id instead.
+function getJobUrl(jobId: string): string {
+  return `https://www.linkedin.com/jobs/view/${jobId}/`
 }
 
 // Shows the detected language right next to the job title, inline with LinkedIn's own
@@ -189,7 +207,17 @@ export function injectActionButtons(card: HTMLElement): void {
 
   actionsContainer.appendChild(
     createActionButton('Hide', 'Hide this job', () => {
-      void hideJob(jobId)
+      // Snapshotted now, not re-read later — LinkedIn recycles this card's content once
+      // it's hidden and scrolled away, so this is the only moment this data is available.
+      const job: HiddenJob = {
+        jobId,
+        title: getJobTitle(card) ?? 'Job',
+        url: getJobUrl(jobId),
+        company: getCompanyName(card) ?? '',
+        location: getJobLocation(card),
+        hiddenAt: Date.now()
+      }
+      void hideJob(job)
         .then(() => hideCard(card))
         .catch((error) => reportStorageError('hide job', error))
     })

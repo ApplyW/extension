@@ -199,16 +199,126 @@ section + section {
   text-transform: capitalize;
 }
 
-.hidden-jobs-row {
+.hidden-jobs-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--aw-border);
+  background: transparent;
+  color: CanvasText;
+  cursor: pointer;
+  transition: background-color 120ms ease;
 }
 
-.count {
+.hidden-jobs-toggle:hover {
+  background: var(--aw-blue-soft);
+}
+
+.hidden-jobs-toggle span:last-child {
+  color: var(--aw-blue);
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+/* Hidden jobs list (expanded view) */
+
+.hidden-jobs-header {
+  justify-content: space-between;
+}
+
+.back-button {
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: CanvasText;
+  cursor: pointer;
+}
+
+.hidden-jobs-title {
   margin: 0;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--aw-text-muted);
+}
+
+.hidden-job-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 16px 10px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.hidden-job-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--aw-border);
+}
+
+.hidden-job-item:last-child {
+  border-bottom: none;
+}
+
+/* min-width: 0 lets a flex child shrink below its content size — required for the
+   ellipsis truncation below to actually kick in instead of overflowing the row. */
+.hidden-job-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hidden-job-title,
+.hidden-job-meta,
+.hidden-job-time {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hidden-job-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--aw-blue);
+  text-decoration: none;
+}
+
+.hidden-job-title:hover {
+  text-decoration: underline;
+}
+
+.hidden-job-meta {
+  font-size: 12px;
+  color: CanvasText;
+}
+
+.hidden-job-meta strong {
+  font-weight: 700;
+}
+
+.hidden-job-time {
+  font-size: 11px;
+  color: var(--aw-text-muted);
+}
+
+/* Centered on the row (not stacked under the text) so the gap to the item above and
+   below stays even regardless of how many lines the title/meta above it wrap to. */
+.hidden-job-undo {
+  flex: 0 0 auto;
 }
 
 /* Buttons */
