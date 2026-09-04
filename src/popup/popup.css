@@ -1,18 +1,46 @@
+/* ApplyW popup — "the cut list".
+
+   The design system is derived from the AW monogram: every stroke in the mark ends in a
+   diagonal shear, so a small skewed tick (.tick) is the one repeated motif here. It carries
+   meaning rather than decoration — navy marks a blocked company (structural, permanent),
+   electric blue marks a hidden job (light, reversible) — and that colour pairing is learned
+   on the main screen, then reused on the list screens. The mark has no curves, hence the
+   near-sharp 2px radius throughout instead of pills. */
+
 :root {
   color-scheme: light dark;
-  --aw-navy: #16213e;
-  --aw-blue: #1c6feb;
-  --aw-blue-soft: rgba(28, 111, 235, 0.12);
-  --aw-border: rgba(22, 33, 62, 0.12);
-  --aw-text-muted: rgba(22, 33, 62, 0.62);
+
+  --aw-surface: #ffffff;
+  --aw-recess: #f6f7f9;
+  --aw-text: #1b2438;
+  --aw-mute: #667089;
+  --aw-rule: rgba(36, 49, 76, 0.12);
+  /* The two logo colours, by role: "mark" is the navy A, "signal" is the electric blue W. */
+  --aw-mark: #24314c;
+  --aw-signal: #1a7bff;
+  --aw-signal-soft: rgba(26, 123, 255, 0.1);
+
+  --aw-radius: 2px;
+  /* Angle of the monogram's stroke ends, reused by every tick. */
+  --aw-shear: -18deg;
+  /* The same cut, for whatever fills the hero slot. The monogram never chamfers a corner —
+     it terminates each stroke with a diagonal across the stroke's whole width — so this
+     slants the entire right edge rather than nicking the corner, which just read as
+     damage. 13px of offset is --aw-shear across the slot's ~40px height; recompute it
+     (height × tan 18° ≈ height × 0.325) if that height ever changes. */
+  --aw-cut: polygon(0 0, 100% 0, calc(100% - 13px) 100%, 0 100%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --aw-blue: #5b9dff;
-    --aw-blue-soft: rgba(91, 157, 255, 0.18);
-    --aw-border: rgba(255, 255, 255, 0.14);
-    --aw-text-muted: rgba(255, 255, 255, 0.6);
+    --aw-surface: #14181f;
+    --aw-recess: #1b212b;
+    --aw-text: #e7ebf2;
+    --aw-mute: #8f9ab1;
+    --aw-rule: rgba(255, 255, 255, 0.12);
+    --aw-mark: #93a3c2;
+    --aw-signal: #5ea2ff;
+    --aw-signal-soft: rgba(94, 162, 255, 0.14);
   }
 }
 
@@ -22,11 +50,33 @@
 
 body {
   margin: 0;
-  width: 340px;
+  width: 360px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
-  color: CanvasText;
-  background: Canvas;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--aw-text);
+  background: var(--aw-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--aw-signal);
+  outline-offset: 2px;
+}
+
+/* The one repeated motif: a sheared tick, cut at the same angle as the monogram's strokes.
+   Colour encodes what kind of thing the row removed. */
+
+.tick {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 13px;
+  background: var(--aw-mark);
+  transform: skewX(var(--aw-shear));
+}
+
+.tick-signal {
+  background: var(--aw-signal);
 }
 
 /* Header */
@@ -34,123 +84,243 @@ body {
 .header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--aw-border);
+  gap: 9px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--aw-rule);
 }
 
 .logo {
   display: block;
   flex: 0 0 auto;
-  border-radius: 6px;
+  border-radius: var(--aw-radius);
+  box-shadow: 0 0 0 1px var(--aw-rule);
 }
 
-.brand {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.brand-name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.wordmark {
   font-size: 15px;
   font-weight: 700;
-  color: var(--aw-navy);
+  letter-spacing: -0.02em;
 }
 
-@media (prefers-color-scheme: dark) {
-  .brand-name {
-    color: CanvasText;
-  }
-}
-
-.badge {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1.3;
-  padding: 2px 7px;
-  border-radius: 999px;
-  color: var(--aw-blue);
-  background: var(--aw-blue-soft);
+.beta {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: var(--aw-radius);
+  color: var(--aw-signal);
+  background: var(--aw-signal-soft);
 }
 
 .version {
+  margin-left: auto;
   font-size: 11px;
-  color: var(--aw-text-muted);
+  color: var(--aw-mute);
+  font-variant-numeric: tabular-nums;
 }
 
-/* CTA */
+/* Hero: the action first, the tally as quiet context under it. */
 
-.cta {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--aw-border);
+.hero {
+  padding: 16px;
+  border-bottom: 1px solid var(--aw-rule);
 }
 
-.cta-status {
+.tally {
+  margin: 11px 0 0;
+  font-size: 12px;
+  color: var(--aw-mute);
+}
+
+.tally b {
+  font-weight: 700;
+  color: var(--aw-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Given the same footprint and cut as the primary button it replaces, so the hero doesn't
+   collapse into a bare line of text when you're already on the jobs page. Soft fill reads
+   as passive state, the button's solid fill as an action. */
+.status {
   margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--aw-radius);
+  font-weight: 600;
+  color: var(--aw-signal);
+  background: var(--aw-signal-soft);
+  clip-path: var(--aw-cut);
+}
+
+/* Navigation rows into each list */
+
+.nav {
+  padding: 6px 8px;
+}
+
+.nav-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--aw-blue);
+  gap: 10px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  padding: 10px 8px;
+  border: none;
+  border-radius: var(--aw-radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
-/* Content */
-
-.content {
-  padding: 14px 16px 4px;
+.nav-row:hover {
+  background: var(--aw-recess);
 }
 
-.loading {
-  padding: 24px 16px;
-  text-align: center;
+.nav-label {
+  flex: 1;
+  min-width: 0;
 }
 
-h2 {
-  margin: 0 0 8px;
-  font-size: 12px;
+.nav-count {
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--aw-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
-section + section {
-  margin-top: 18px;
+.nav-chevron {
+  color: var(--aw-mute);
 }
 
-.empty {
+/* List screens */
+
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px 11px 8px;
+  border-bottom: 1px solid var(--aw-rule);
+}
+
+.back {
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border: none;
+  border-radius: var(--aw-radius);
+  background: transparent;
+  color: var(--aw-text);
+  cursor: pointer;
+}
+
+.back:hover {
+  background: var(--aw-recess);
+}
+
+.screen-title {
   margin: 0;
-  color: var(--aw-text-muted);
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.search-wrap {
+.screen-count {
+  font-weight: 400;
+  color: var(--aw-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 16px 12px;
+  max-height: 392px;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--aw-rule);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+/* min-width: 0 lets a flex child shrink under its content width — without it the
+   ellipsis truncation below never engages and long titles blow out the row. */
+.row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title,
+.row-name,
+.row-meta,
+.row-time {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row-title {
+  font-weight: 600;
+  color: var(--aw-signal);
+  text-decoration: none;
+}
+
+.row-title:hover {
+  text-decoration: underline;
+}
+
+/* Company names are stored lowercased for matching (see storage.ts) — capitalized back
+   here so the list doesn't read as shouting in lowercase. */
+.row-name {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.row-meta {
+  font-size: 12px;
+}
+
+.row-meta b {
+  font-weight: 700;
+}
+
+.row-time {
+  font-size: 11px;
+  color: var(--aw-mute);
+}
+
+/* Search */
+
+.search {
   position: relative;
-  margin-bottom: 8px;
+  margin: 10px 16px 0;
 }
 
 .search-input {
   font: inherit;
-  font-size: 13px;
-  box-sizing: border-box;
   width: 100%;
-  padding: 6px 26px 6px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--aw-border);
+  padding: 6px 26px 6px 9px;
+  border-radius: var(--aw-radius);
+  border: 1px solid var(--aw-rule);
   background: transparent;
-  color: CanvasText;
+  color: var(--aw-text);
+}
+
+.search-input::placeholder {
+  color: var(--aw-mute);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--aw-blue);
+  border-color: var(--aw-signal);
 }
 
 .search-clear {
@@ -161,235 +331,132 @@ section + section {
   width: 26px;
   border: none;
   background: transparent;
-  color: var(--aw-text-muted);
+  color: var(--aw-mute);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
 }
 
 .search-clear:hover {
-  color: var(--aw-blue);
-}
-
-.company-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 220px;
-  overflow-y: auto;
-}
-
-.company-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--aw-border);
-}
-
-.company-list li:last-child {
-  border-bottom: none;
-}
-
-.company-list span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-transform: capitalize;
-}
-
-.hidden-jobs-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  font: inherit;
-  font-size: 13px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--aw-border);
-  background: transparent;
-  color: CanvasText;
-  cursor: pointer;
-  transition: background-color 120ms ease;
-}
-
-.hidden-jobs-toggle:hover {
-  background: var(--aw-blue-soft);
-}
-
-.hidden-jobs-toggle span:last-child {
-  color: var(--aw-blue);
-  font-weight: 600;
-  flex: 0 0 auto;
-}
-
-/* Hidden jobs list (expanded view) */
-
-.hidden-jobs-header {
-  justify-content: space-between;
-}
-
-.back-button {
-  font: inherit;
-  font-size: 20px;
-  line-height: 1;
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  border: none;
-  background: transparent;
-  color: CanvasText;
-  cursor: pointer;
-}
-
-.hidden-jobs-title {
-  margin: 0;
-  flex: 1;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--aw-text-muted);
-}
-
-.hidden-job-list {
-  list-style: none;
-  margin: 0;
-  padding: 4px 16px 10px;
-  max-height: 380px;
-  overflow-y: auto;
-}
-
-.hidden-job-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--aw-border);
-}
-
-.hidden-job-item:last-child {
-  border-bottom: none;
-}
-
-/* min-width: 0 lets a flex child shrink below its content size — required for the
-   ellipsis truncation below to actually kick in instead of overflowing the row. */
-.hidden-job-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.hidden-job-title,
-.hidden-job-meta,
-.hidden-job-time {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.hidden-job-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--aw-blue);
-  text-decoration: none;
-}
-
-.hidden-job-title:hover {
-  text-decoration: underline;
-}
-
-.hidden-job-meta {
-  font-size: 12px;
-  color: CanvasText;
-}
-
-.hidden-job-meta strong {
-  font-weight: 700;
-}
-
-.hidden-job-time {
-  font-size: 11px;
-  color: var(--aw-text-muted);
-}
-
-/* Centered on the row (not stacked under the text) so the gap to the item above and
-   below stays even regardless of how many lines the title/meta above it wrap to. */
-.hidden-job-undo {
-  flex: 0 0 auto;
+  color: var(--aw-signal);
 }
 
 /* Buttons */
 
-.ghost-button {
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 12px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  border: 1px solid var(--aw-blue);
-  background: transparent;
-  color: var(--aw-blue);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 120ms ease;
-}
-
-.ghost-button:hover:not(:disabled) {
-  background: var(--aw-blue-soft);
-}
-
-.ghost-button:disabled {
-  border-color: var(--aw-border);
-  color: var(--aw-text-muted);
-  opacity: 0.7;
-  cursor: default;
-}
-
-.primary-button {
+.button-primary {
   font: inherit;
   font-size: 13px;
   font-weight: 700;
   width: 100%;
-  padding: 9px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 999px;
-  border: 1px solid var(--aw-blue);
-  background: var(--aw-blue);
-  color: white;
+  padding: 10px 12px;
+  border-radius: var(--aw-radius);
+  border: 1px solid var(--aw-signal);
+  background: var(--aw-signal);
+  color: #ffffff;
   cursor: pointer;
+  clip-path: var(--aw-cut);
   transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.primary-button:hover {
-  background: color-mix(in srgb, var(--aw-blue) 85%, black);
-  border-color: color-mix(in srgb, var(--aw-blue) 85%, black);
+.button-primary:hover {
+  background: color-mix(in srgb, var(--aw-signal) 86%, black);
+  border-color: color-mix(in srgb, var(--aw-signal) 86%, black);
+}
+
+/* clip-path clips the focus outline away with the corner, so this one draws its ring
+   inside the button instead — same job, still clearly visible on the solid fill. */
+.button-primary:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--aw-surface);
+}
+
+.button-quiet {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: var(--aw-radius);
+  border: 1px solid var(--aw-rule);
+  background: transparent;
+  color: var(--aw-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.button-quiet:hover {
+  border-color: var(--aw-signal);
+  color: var(--aw-signal);
+  background: var(--aw-signal-soft);
+}
+
+/* Second press of "Unhide all" — restating the count makes the scope of the action
+   explicit before it happens, since bulk unhiding can't be undone. */
+.button-quiet.is-confirming {
+  border-color: var(--aw-signal);
+  color: var(--aw-signal);
+  background: var(--aw-signal-soft);
+}
+
+/* Empty + loading states */
+
+.note {
+  margin: 0;
+  padding: 18px 16px 22px;
+  color: var(--aw-mute);
+}
+
+.note b {
+  font-weight: 600;
+  color: var(--aw-text);
 }
 
 /* Footer */
 
 .footer {
-  margin-top: 16px;
   padding: 10px 16px;
-  border-top: 1px solid var(--aw-border);
+  border-top: 1px solid var(--aw-rule);
 }
 
-.report-link {
+.footer-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--aw-text-muted);
+  color: var(--aw-mute);
   text-decoration: none;
 }
 
-.report-link:hover {
-  color: var(--aw-blue);
+.footer-link:hover {
+  color: var(--aw-signal);
+}
+
+.icon {
+  flex: 0 0 auto;
+}
+
+/* Motion: one moment only — moving between screens, so it's clear which way you went. */
+
+.screen {
+  animation: screen-in 130ms ease-out;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+
+  .button-primary,
+  .button-quiet {
+    transition: none;
+  }
 }

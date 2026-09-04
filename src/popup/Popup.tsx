@@ -6,8 +6,12 @@ import pkg from '../../package.json'
 const ISSUES_URL = 'https://github.com/ApplyW/extension/issues'
 // Keep in sync with manifest.config.ts's content_scripts match pattern.
 const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search/'
-// Below this many blocked companies, a search box is more clutter than it's worth.
+// Below this many blocked companies, a filter box is more clutter than it's worth.
 const COMPANY_SEARCH_THRESHOLD = 5
+// How long "Unhide all" stays armed before falling back to its normal label.
+const CONFIRM_TIMEOUT_MS = 3000
+
+type View = 'main' | 'companies' | 'hidden'
 
 const RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['year', 1000 * 60 * 60 * 24 * 365],
@@ -34,15 +38,37 @@ function isJobsSearchUrl(url: string | undefined): boolean {
   return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
 }
 
+// Drawn to the monogram's geometry rather than a stock bug glyph: straight segments only,
+// flat (default `butt`) stroke ends, no curves or rounded caps anywhere.
+function BugIcon() {
+  return (
+    <svg
+      className="icon"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <path d="M12 5 17 9v6l-5 5-5-5V9z" />
+      <path d="M12 5v15" />
+      <path d="M7 10 3 7M7 13H3M7 16l-4 3M17 10l4-3M17 13h4M17 16l4 3" />
+      <path d="M10 5 8 2M14 5l2-3" />
+    </svg>
+  )
+}
+
 export function Popup() {
   const [blockedCompanies, setBlockedCompanies] = useState<string[]>([])
   const [hiddenJobs, setHiddenJobs] = useState<HiddenJob[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [companyQuery, setCompanyQuery] = useState('')
-  // Toggles between the main popup and the full hidden-jobs list — a second "screen"
-  // inside the same popup rather than a separate window, so it stays consistent with the
-  // rest of the UI without any extra window-management wiring.
-  const [view, setView] = useState<'main' | 'hidden-jobs'>('main')
+  const [isConfirmingUnhideAll, setIsConfirmingUnhideAll] = useState(false)
+  // Which of the three screens is showing. Both lists are drill-downs rather than one
+  // inline and one drilled-in, so the two halves of the popup behave the same way.
+  const [view, setView] = useState<View>('main')
   // Whether the active tab is already on LinkedIn's job search page — checked once per
   // popup open, separately from the storage-backed state above, so it doesn't need to
   // re-run after unrelated actions like unblocking a company.
@@ -69,11 +95,11 @@ export function Popup() {
     })
   }, [])
 
-  // Leaves an empty list view stranded — back out to the main screen automatically once
-  // there's nothing left to show (e.g. after undoing or clearing the last one).
   useEffect(() => {
-    if (view === 'hidden-jobs' && hiddenJobs.length === 0) setView('main')
-  }, [view, hiddenJobs.length])
+    if (!isConfirmingUnhideAll) return
+    const timer = setTimeout(() => setIsConfirmingUnhideAll(false), CONFIRM_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [isConfirmingUnhideAll])
 
   const handleOpenJobsSearch = (): void => {
     void chrome.tabs.create({ url: JOBS_SEARCH_URL })
@@ -83,152 +109,217 @@ export function Popup() {
     void unblockCompany(company).then(reload)
   }
 
-  const handleClearHiddenJobs = (): void => {
+  const handleUnhide = (jobId: string): void => {
+    void unhideJob(jobId).then(reload)
+  }
+
+  // Two-press: bulk unhiding can't be undone one job at a time, so the first press only
+  // arms the button and restates how many jobs it covers.
+  const handleUnhideAll = (): void => {
+    if (!isConfirmingUnhideAll) {
+      setIsConfirmingUnhideAll(true)
+      return
+    }
+    setIsConfirmingUnhideAll(false)
     void clearHiddenJobs().then(reload)
   }
 
-  const handleUndoHide = (jobId: string): void => {
-    void unhideJob(jobId).then(reload)
+  const goTo = (next: View): void => {
+    setIsConfirmingUnhideAll(false)
+    setView(next)
   }
 
   // Company names are already stored normalized/lowercased (see storage.ts), so the typed
   // query only needs its own trim + lowercase to match.
-  const normalizedQuery = companyQuery.trim().toLowerCase()
+  const trimmedQuery = companyQuery.trim()
+  const normalizedQuery = trimmedQuery.toLowerCase()
   const filteredCompanies = normalizedQuery
     ? blockedCompanies.filter((company) => company.includes(normalizedQuery))
     : blockedCompanies
 
   const sortedHiddenJobs = [...hiddenJobs].sort((a, b) => b.hiddenAt - a.hiddenAt)
 
-  if (view === 'hidden-jobs') {
+  if (view === 'companies') {
     return (
-      <div className="popup">
-        <header className="header hidden-jobs-header">
-          <button type="button" className="back-button" aria-label="Back" onClick={() => setView('main')}>
+      <div className="screen" key="companies">
+        <div className="screen-header">
+          <button type="button" className="back" aria-label="Back" onClick={() => goTo('main')}>
             ‹
           </button>
-          <h2 className="hidden-jobs-title">Hidden jobs ({sortedHiddenJobs.length})</h2>
-          <button type="button" className="ghost-button" onClick={handleClearHiddenJobs}>
-            Clear all
-          </button>
-        </header>
-        <ul className="hidden-job-list">
-          {sortedHiddenJobs.map((job) => (
-            <li key={job.jobId} className="hidden-job-item">
-              <div className="hidden-job-info">
-                <a href={job.url} target="_blank" rel="noopener noreferrer" className="hidden-job-title">
-                  {job.title}
-                </a>
-                <div className="hidden-job-meta">
-                  {job.company && <strong>{job.company}</strong>}
-                  {job.company && job.location ? ' | ' : ''}
-                  {job.location}
-                </div>
-                <div className="hidden-job-time">Hidden {formatHiddenAt(job.hiddenAt)}</div>
+          <h1 className="screen-title">
+            Blocked companies {blockedCompanies.length > 0 && <span className="screen-count">{blockedCompanies.length}</span>}
+          </h1>
+        </div>
+
+        {blockedCompanies.length === 0 ? (
+          <p className="note">
+            No companies blocked yet. Open a job on LinkedIn and press <b>Block</b> next to the company name to stop
+            seeing it.
+          </p>
+        ) : (
+          <>
+            {blockedCompanies.length > COMPANY_SEARCH_THRESHOLD && (
+              <div className="search">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Filter by name"
+                  value={companyQuery}
+                  onChange={(event) => setCompanyQuery(event.target.value)}
+                />
+                {companyQuery && (
+                  <button type="button" className="search-clear" aria-label="Clear filter" onClick={() => setCompanyQuery('')}>
+                    ×
+                  </button>
+                )}
               </div>
-              <button type="button" className="ghost-button hidden-job-undo" onClick={() => handleUndoHide(job.jobId)}>
-                Undo
-              </button>
-            </li>
-          ))}
-        </ul>
+            )}
+            {filteredCompanies.length === 0 ? (
+              <p className="note">No match for “{trimmedQuery}”.</p>
+            ) : (
+              <ul className="list">
+                {filteredCompanies.map((company) => (
+                  <li key={company} className="row">
+                    <span className="tick" aria-hidden="true" />
+                    <div className="row-body">
+                      <span className="row-name">{company}</span>
+                    </div>
+                    <button type="button" className="button-quiet" onClick={() => handleUnblock(company)}>
+                      Unblock
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
     )
   }
 
-  return (
-    <div className="popup">
-      <header className="header">
-        <img src={logoUrl} alt="" className="logo" width={32} height={32} />
-        <div className="brand">
-          <div className="brand-name">
-            ApplyW
-            <span className="badge">Beta</span>
-          </div>
-          <div className="version">v{pkg.version}</div>
+  if (view === 'hidden') {
+    return (
+      <div className="screen" key="hidden">
+        <div className="screen-header">
+          <button type="button" className="back" aria-label="Back" onClick={() => goTo('main')}>
+            ‹
+          </button>
+          <h1 className="screen-title">
+            Hidden jobs {hiddenJobs.length > 0 && <span className="screen-count">{hiddenJobs.length}</span>}
+          </h1>
+          {hiddenJobs.length > 0 && (
+            <button
+              type="button"
+              className={`button-quiet${isConfirmingUnhideAll ? ' is-confirming' : ''}`}
+              onClick={handleUnhideAll}
+            >
+              {isConfirmingUnhideAll ? `Unhide all ${hiddenJobs.length}?` : 'Unhide all'}
+            </button>
+          )}
         </div>
-      </header>
 
-      <section className="cta">
-        {isOnJobsSearchPage ? (
-          <p className="cta-status">
-            <span aria-hidden="true">✓</span> Filters are active on this page
+        {hiddenJobs.length === 0 ? (
+          <p className="note">
+            No jobs hidden yet. Press <b>Hide</b> on any job card to clear it out of your search results.
           </p>
         ) : (
-          <button type="button" className="primary-button" onClick={handleOpenJobsSearch}>
-            Open LinkedIn Jobs <span aria-hidden="true">↗</span>
+          <ul className="list">
+            {sortedHiddenJobs.map((job) => (
+              <li key={job.jobId} className="row">
+                <span className="tick tick-signal" aria-hidden="true" />
+                <div className="row-body">
+                  <a href={job.url} target="_blank" rel="noopener noreferrer" className="row-title">
+                    {job.title}
+                  </a>
+                  <span className="row-meta">
+                    {job.company && <b>{job.company}</b>}
+                    {job.company && job.location ? ' | ' : ''}
+                    {job.location}
+                  </span>
+                  <span className="row-time">Hidden {formatHiddenAt(job.hiddenAt)}</span>
+                </div>
+                <button type="button" className="button-quiet" onClick={() => handleUnhide(job.jobId)}>
+                  Unhide
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
+
+  const tallyParts: string[] = []
+  if (hiddenJobs.length > 0) tallyParts.push(`${hiddenJobs.length} job${hiddenJobs.length === 1 ? '' : 's'}`)
+  if (blockedCompanies.length > 0) {
+    tallyParts.push(`${blockedCompanies.length} ${blockedCompanies.length === 1 ? 'company' : 'companies'}`)
+  }
+
+  return (
+    <div className="screen" key="main">
+      <header className="header">
+        <img src={logoUrl} alt="" className="logo" width={28} height={28} />
+        <span className="wordmark">ApplyW</span>
+        <span className="beta">Beta</span>
+        <span className="version">v{pkg.version}</span>
+      </header>
+
+      <section className="hero">
+        {isOnJobsSearchPage ? (
+          <p className="status">ApplyW is filtering this tab</p>
+        ) : (
+          <button type="button" className="button-primary" onClick={handleOpenJobsSearch}>
+            Open LinkedIn Jobs
           </button>
+        )}
+
+        {!isLoading && (
+          <p className="tally">
+            {tallyParts.length === 0 ? (
+              'Nothing cleared yet. Hide a job to get started.'
+            ) : (
+              <>
+                Cleared{' '}
+                {tallyParts.map((part, index) => (
+                  <span key={part}>
+                    {index > 0 && ' and '}
+                    <b>{part}</b>
+                  </span>
+                ))}{' '}
+                out of your feed.
+              </>
+            )}
+          </p>
         )}
       </section>
 
       {isLoading ? (
-        <p className="empty loading">Loading…</p>
+        <p className="note">Loading…</p>
       ) : (
-        <div className="content">
-          <section>
-            <h2>Blocked companies ({blockedCompanies.length})</h2>
-            {blockedCompanies.length === 0 ? (
-              <p className="empty">No companies blocked yet.</p>
-            ) : (
-              <>
-                {blockedCompanies.length > COMPANY_SEARCH_THRESHOLD && (
-                  <div className="search-wrap">
-                    <input
-                      type="text"
-                      className="search-input"
-                      placeholder="Search blocked companies"
-                      value={companyQuery}
-                      onChange={(event) => setCompanyQuery(event.target.value)}
-                    />
-                    {companyQuery && (
-                      <button
-                        type="button"
-                        className="search-clear"
-                        aria-label="Clear search"
-                        onClick={() => setCompanyQuery('')}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                )}
-                {filteredCompanies.length === 0 ? (
-                  <p className="empty">No blocked companies match "{companyQuery.trim()}".</p>
-                ) : (
-                  <ul className="company-list">
-                    {filteredCompanies.map((company) => (
-                      <li key={company}>
-                        <span>{company}</span>
-                        <button type="button" className="ghost-button" onClick={() => handleUnblock(company)}>
-                          Unblock
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-          </section>
-
-          <section>
-            <h2>Hidden jobs</h2>
-            {hiddenJobs.length === 0 ? (
-              <p className="empty">No jobs hidden yet.</p>
-            ) : (
-              <button type="button" className="hidden-jobs-toggle" onClick={() => setView('hidden-jobs')}>
-                <span>
-                  {hiddenJobs.length} job{hiddenJobs.length === 1 ? '' : 's'} hidden
-                </span>
-                <span aria-hidden="true">View ›</span>
-              </button>
-            )}
-          </section>
-        </div>
+        <nav className="nav">
+          <button type="button" className="nav-row" onClick={() => goTo('companies')}>
+            <span className="tick" aria-hidden="true" />
+            <span className="nav-label">Blocked companies</span>
+            <span className="nav-count">{blockedCompanies.length}</span>
+            <span className="nav-chevron" aria-hidden="true">
+              ›
+            </span>
+          </button>
+          <button type="button" className="nav-row" onClick={() => goTo('hidden')}>
+            <span className="tick tick-signal" aria-hidden="true" />
+            <span className="nav-label">Hidden jobs</span>
+            <span className="nav-count">{hiddenJobs.length}</span>
+            <span className="nav-chevron" aria-hidden="true">
+              ›
+            </span>
+          </button>
+        </nav>
       )}
 
       <footer className="footer">
-        <a className="report-link" href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
-          Report a problem <span aria-hidden="true">↗</span>
+        <a className="footer-link" href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
+          <BugIcon />
+          Report a problem
         </a>
       </footer>
     </div>
