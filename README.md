@@ -3,8 +3,7 @@
 
   **Apply Wisely**: Declutter your LinkedIn job search — entirely on your device.
 
-  [Website](https://applyw.chudnovskyi-v.workers.dev/) · [Chrome Web Store](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp) · [Report a problem](https://github.com/ApplyW/extension/issues)
-
+  [![Website](https://img.shields.io/badge/website-live-1c6feb.svg)](https://applyw.chudnovskyi-v.workers.dev/)
   [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/imllbmbpfpgnibchclonahimmkjanjhp?color=1c6feb&label=chrome%20web%20store)](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp)
   [![Latest release](https://img.shields.io/github/v/release/ApplyW/extension?color=1c6feb)](https://github.com/ApplyW/extension/releases/latest)
   [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
