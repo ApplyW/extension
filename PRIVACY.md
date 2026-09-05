@@ -60,16 +60,21 @@ ApplyW requests:
 
 ## The metrics page
 
-The metrics page on [applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/)
+The metrics page on [applyw.app](https://applyw.app/)
 can ask the extension for the counts described above and display them. This is a
 request from the page to the extension inside your own browser — no network
-request is made, and nothing is sent to ApplyW or anyone else. Only that one
-address is allowed to ask, and it can only read those counts. If the extension
-isn't installed, the page shows nothing.
+request is made, and nothing is sent to ApplyW or anyone else. It can only read
+those counts, and nothing else. If the extension isn't installed, the page shows
+nothing.
+
+Only ApplyW's own site may ask. That is `applyw.app`, plus the address the site
+used before it had its own domain (`applyw.chudnovskyi-v.workers.dev`), which is
+listed only until everyone has updated and will be removed in a later version.
+No other website can reach the extension.
 
 ## The website
 
-[applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/) has
+[applyw.app](https://applyw.app/) has
 no analytics, no tracking pixels, no advertising, and sets no cookies. It asks you
 for nothing and stores nothing in your browser. Like any website it is served by a
 host — Cloudflare — which keeps its own standard server logs; ApplyW neither reads

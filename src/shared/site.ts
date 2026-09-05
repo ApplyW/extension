@@ -8,8 +8,15 @@
 // Moving to a custom domain is an edit here. Keep BOTH the old and the new origin in the
 // list through the switchover: a published extension only picks up a new manifest once
 // store review clears, which takes days, and until then anyone landing on the new domain
-// would be told to install what they already have. Drop the old one a release later.
-export const SITE_ORIGINS = ['https://applyw.chudnovskyi-v.workers.dev']
+// would be told to install what they already have.
+//
+// The workers.dev address is the previous home, kept here (and kept serving on Cloudflare)
+// only until everyone has updated past the release that added applyw.app. Drop it then —
+// leaving a domain in this list is leaving it permitted to read the user's counts.
+//
+// If www.applyw.app is ever served directly rather than redirected to the apex, it needs
+// its own entry: an origin is an exact host, and www is a different one.
+export const SITE_ORIGINS = ['https://applyw.app', 'https://applyw.chudnovskyi-v.workers.dev']
 
 // The canonical one to send people to — first in the list is always the current home.
 export const SITE_URL = SITE_ORIGINS[0]
