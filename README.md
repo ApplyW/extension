@@ -3,6 +3,8 @@
 
   **Apply Wisely**: Declutter your LinkedIn job search — entirely on your device.
 
+  [Website](https://applyw.chudnovskyi-v.workers.dev/) · [Chrome Web Store](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp) · [Report a problem](https://github.com/ApplyW/extension/issues)
+
   [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/imllbmbpfpgnibchclonahimmkjanjhp?color=1c6feb&label=chrome%20web%20store)](https://chromewebstore.google.com/detail/imllbmbpfpgnibchclonahimmkjanjhp)
   [![Latest release](https://img.shields.io/github/v/release/ApplyW/extension?color=1c6feb)](https://github.com/ApplyW/extension/releases/latest)
   [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
@@ -26,11 +28,12 @@ page — no account, no server, no data leaving your browser.
 ## Features
 
 - **Hide** any job with one click — it stays hidden across reloads
-- **Block a company** — every listing from them disappears, immediately and from then on
+- **Block a company** — open a job and block it; every listing from them disappears, immediately and from then on
+- **Keyword filter** — require or exclude specific words from a job's title or description (e.g. only show listings mentioning "Java", or hide anything mentioning "Junior")
 - **Hide Applied / Hide Viewed** toggles, right next to LinkedIn's own filters (Date Posted, Experience level, ...)
 - **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
-- **Keyword filter** — require or exclude specific words from a job's title or description (e.g. only show listings mentioning "Java", or hide anything mentioning "Junior")
-- **Popup dashboard** — see and undo everything you've blocked, and clear hidden jobs, in one place
+- **Hidden jobs list** — every job you've hidden, with its title, company, location and when you hid it. Bring back any single one, or all of them at once
+- **Blocked companies list** — everything you've blocked, unblockable in one click, with a search box once the list gets long
 
 ## Install
 
@@ -73,6 +76,13 @@ npm install
 npm run dev     # Vite dev server with HMR
 npm run build   # production build, outputs to dist/
 ```
+
+## Related repositories
+
+- [website](https://github.com/ApplyW/website) — the landing page at
+  [applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/)
+- [backend](https://github.com/ApplyW/backend) — not used by the extension; nothing here
+  talks to a server
 
 ## Contributing
 
