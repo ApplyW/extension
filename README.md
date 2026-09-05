@@ -34,6 +34,7 @@ page — no account, no server, no data leaving your browser.
 - **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
 - **Hidden jobs list** — every job you've hidden, with its title, company, location and when you hid it. Bring back any single one, or all of them at once
 - **Blocked companies list** — everything you've blocked, unblockable in one click, with a search box once the list gets long
+- **Metrics** — see which of your filters is actually doing the work, ranked, with a breakdown of how many listings each excluded word caught. Shown on the [website](https://applyw.chudnovskyi-v.workers.dev/#metrics), read straight out of your own browser
 
 ## Install
 

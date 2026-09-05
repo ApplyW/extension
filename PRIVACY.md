@@ -48,6 +48,14 @@ request is made, and nothing is sent to ApplyW or anyone else. Only that one
 address is allowed to ask, and it can only read those counts. If the extension
 isn't installed, the page shows nothing.
 
+## The website
+
+[applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/) has
+no analytics, no tracking pixels, no advertising, and sets no cookies. It asks you
+for nothing and stores nothing in your browser. Like any website it is served by a
+host — Cloudflare — which keeps its own standard server logs; ApplyW neither reads
+nor receives them.
+
 ## Changes to this policy
 
 If this policy changes, the update will be reflected on this page with a
