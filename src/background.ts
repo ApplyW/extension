@@ -9,16 +9,15 @@ import { getMetrics } from './shared/metrics'
 // browser for data the browser already holds, the extension answers, and it never leaves
 // the machine. The site renders nothing if the extension isn't installed.
 
-const ALLOWED_ORIGINS = ['https://applyw.chudnovskyi-v.workers.dev']
-
 export interface MetricsRequest {
   type: 'applyw:getMetrics'
 }
 
-chrome.runtime.onMessageExternal.addListener((message: MetricsRequest, sender, sendResponse) => {
-  // externally_connectable in the manifest already restricts who can reach this; checking
-  // the origin again costs nothing and keeps the allowed caller visible in the code.
-  if (!sender.origin || !ALLOWED_ORIGINS.includes(sender.origin)) return false
+// The manifest's `externally_connectable` is the gate: Chrome refuses the connection before
+// this listener is ever reached, so the allowed origins live in exactly one place. An
+// allowlist repeated here would only be a second thing to forget to update — which is
+// precisely what would happen the day this moves to a custom domain.
+chrome.runtime.onMessageExternal.addListener((message: MetricsRequest, _sender, sendResponse) => {
   if (message?.type !== 'applyw:getMetrics') return false
 
   void getMetrics()
