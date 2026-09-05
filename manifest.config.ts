@@ -1,5 +1,7 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 import pkg from './package.json' with { type: 'json' }
+// Shared with the popup, which links to the same site — see src/shared/site.ts.
+import { SITE_ORIGINS } from './src/shared/site'
 
 export default defineManifest(({ mode }) => ({
   manifest_version: 3,
@@ -26,7 +28,7 @@ export default defineManifest(({ mode }) => ({
   // would let any local server read your counts.
   externally_connectable: {
     matches: [
-      'https://applyw.chudnovskyi-v.workers.dev/*',
+      ...SITE_ORIGINS.map((origin) => `${origin}/*`),
       ...(mode === 'development' ? ['http://localhost:5173/*'] : [])
     ]
   },

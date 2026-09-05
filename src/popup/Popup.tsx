@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { clearHiddenJobs, getBlockedCompanies, getHiddenJobs, unblockCompany, unhideJob, type HiddenJob } from '../shared/storage'
+import { METRICS_URL } from '../shared/site'
 import logoUrl from '../assets/applyw-logo.png'
 import pkg from '../../package.json'
 
@@ -36,6 +37,23 @@ function formatHiddenAt(hiddenAt: number): string {
 
 function isJobsSearchUrl(url: string | undefined): boolean {
   return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
+}
+
+// Three ticks at three heights, sharing a baseline. The tick is the mark's one motif and
+// it means "a thing removed", so a chart built out of ticks means "counts of things
+// removed" — which is exactly what the metrics page shows, and why this isn't a stock
+// chart glyph. Drawn as parallelograms rather than rects under a skew transform so the
+// lean is exactly --aw-shear (18°, x shifts by 0.325 per unit of height) and nothing
+// escapes the viewBox. Sharing a baseline is the same reason the metrics page ranks with
+// bars: lengths are only comparable from a common start.
+function ChartIcon() {
+  return (
+    <svg className="icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M1 21H5L7.6 13H3.6Z" />
+      <path d="M7 21H11L15.22 8H11.22Z" />
+      <path d="M13 21H17L22.52 4H18.52Z" />
+    </svg>
+  )
 }
 
 // Drawn to the monogram's geometry rather than a stock bug glyph: straight segments only,
@@ -274,22 +292,42 @@ export function Popup() {
         )}
 
         {!isLoading && (
-          <p className="tally">
-            {tallyParts.length === 0 ? (
-              'Nothing cleared yet. Hide a job to get started.'
-            ) : (
-              <>
-                Cleared{' '}
-                {tallyParts.map((part, index) => (
-                  <span key={part}>
-                    {index > 0 && ' and '}
-                    <b>{part}</b>
-                  </span>
-                ))}{' '}
-                out of your feed.
-              </>
+          <div className="tally-row">
+            <p className="tally">
+              {tallyParts.length === 0 ? (
+                'Nothing cleared yet. Hide a job to get started.'
+              ) : (
+                <>
+                  Cleared{' '}
+                  {tallyParts.map((part, index) => (
+                    <span key={part}>
+                      {index > 0 && ' and '}
+                      <b>{part}</b>
+                    </span>
+                  ))}{' '}
+                  out of your feed.
+                </>
+              )}
+            </p>
+
+            {/* Sits on the tally because that line is the same subject one level up: this
+                is how much was cleared, the page behind it is which filter did it. Not a
+                nav row — those chevrons promise a drill-down within the popup, and this
+                leaves for a tab. Hidden until something has been counted, so it never
+                opens a page with nothing on it. */}
+            {tallyParts.length > 0 && (
+              <a
+                className="metrics-link"
+                href={METRICS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="See which filters are doing the work"
+                aria-label="See which filters are doing the work"
+              >
+                <ChartIcon />
+              </a>
             )}
-          </p>
+          </div>
         )}
       </section>
 
