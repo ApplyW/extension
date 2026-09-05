@@ -1,7 +1,7 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 import pkg from './package.json' with { type: 'json' }
 
-export default defineManifest({
+export default defineManifest(({ mode }) => ({
   manifest_version: 3,
   name: 'ApplyW',
   description: "Apply Wisely: hide jobs you've seen, block companies, and filter listings by language on LinkedIn.",
@@ -20,10 +20,15 @@ export default defineManifest({
     type: 'module'
   },
   // Lets the metrics page on the website ask the extension for the user's own counts.
-  // Only this exact origin can reach the extension, and only to read numbers already
-  // stored locally — no network request is involved on either side.
+  // Only these origins can reach the extension, and only to read numbers already stored
+  // locally — no network request is involved on either side. The dev server is added in
+  // development builds only: a published extension that answers anything on localhost
+  // would let any local server read your counts.
   externally_connectable: {
-    matches: ['https://applyw.chudnovskyi-v.workers.dev/*']
+    matches: [
+      'https://applyw.chudnovskyi-v.workers.dev/*',
+      ...(mode === 'development' ? ['http://localhost:5173/*'] : [])
+    ]
   },
   action: {
     default_popup: 'src/popup/index.html',
@@ -55,4 +60,4 @@ export default defineManifest({
       world: 'MAIN'
     }
   ]
-})
+}))
