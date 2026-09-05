@@ -10,6 +10,8 @@
   [![Manifest V3](https://img.shields.io/badge/manifest-v3-1c6feb.svg)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
   [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#status)
   [![PRs welcome](https://img.shields.io/badge/PRs-welcome-1c6feb.svg)](https://github.com/ApplyW/extension/issues)
+
+  <img src="docs/screenshots/overview.png" alt="ApplyW's Hide and Block controls and its popup, on a LinkedIn job search page" width="820">
 </div>
 
 ---
@@ -33,7 +35,15 @@ page — no account, no server, no data leaving your browser.
 - **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
 - **Hidden jobs list** — every job you've hidden, with its title, company, location and when you hid it. Bring back any single one, or all of them at once
 - **Blocked companies list** — everything you've blocked, unblockable in one click, with a search box once the list gets long
-- **Metrics** — see which of your filters is actually doing the work, ranked, with a breakdown of how many listings each excluded word caught. Shown on the [website](https://applyw.chudnovskyi-v.workers.dev/#metrics), read straight out of your own browser
+- **Metrics** — see which of your filters is actually doing the work, ranked, with a breakdown of how many listings each excluded word caught. One click from the popup, shown on the [website](https://applyw.chudnovskyi-v.workers.dev/#metrics) and read straight out of your own browser
+
+### Language and keyword filters, in LinkedIn's own filter bar
+
+![The Language and Keywords filter pills open on a LinkedIn job search page, with "internship" staged as an excluded word](docs/screenshots/filters.png)
+
+### Everything you've hidden, one click from coming back
+
+![The ApplyW popup showing blocked companies and hidden jobs counts](docs/screenshots/popup.png)
 
 ## Install
 
@@ -80,9 +90,8 @@ npm run build   # production build, outputs to dist/
 ## Related repositories
 
 - [website](https://github.com/ApplyW/website) — the landing page at
-  [applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/)
-- [backend](https://github.com/ApplyW/backend) — not used by the extension; nothing here
-  talks to a server
+  [applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/), and the
+  metrics page
 
 ## Contributing
 
