@@ -14,6 +14,17 @@ export default defineManifest({
     128: 'src/assets/icons/icon128.png'
   },
   permissions: ['storage'],
+  // Exists only so chrome.runtime.onMessageExternal can be received — see src/background.ts.
+  background: {
+    service_worker: 'src/background.ts',
+    type: 'module'
+  },
+  // Lets the metrics page on the website ask the extension for the user's own counts.
+  // Only this exact origin can reach the extension, and only to read numbers already
+  // stored locally — no network request is involved on either side.
+  externally_connectable: {
+    matches: ['https://applyw.chudnovskyi-v.workers.dev/*']
+  },
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'ApplyW',

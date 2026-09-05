@@ -1,4 +1,5 @@
 import { hideJob, type HiddenJob, type Settings } from '../shared/storage'
+import { noteHide } from '../shared/metrics'
 import { ensureLanguageDetected, getCachedLanguage } from './language'
 import { getJobDescription } from './jobDescriptions'
 
@@ -123,6 +124,12 @@ function containsAnyWord(lowerText: string, words: Set<string>): boolean {
   return Array.from(words).some((word) => new RegExp(`\\b${escapeRegExp(word)}\\b`).test(lowerText))
 }
 
+// Which words matched, not just whether any did — the per-word tallies in metrics.ts need
+// to know which one caught the job.
+function matchingWords(lowerText: string, words: Set<string>): string[] {
+  return Array.from(words).filter((word) => new RegExp(`\\b${escapeRegExp(word)}\\b`).test(lowerText))
+}
+
 // Matches against the title (always known immediately) and the description (arrives
 // later, if at all — see jobDescriptions.ts) — a word in either counts. Same "only hide on
 // a positive, known mismatch" rule as language filtering below applies per-criterion:
@@ -130,29 +137,42 @@ function containsAnyWord(lowerText: string, words: Set<string>): boolean {
 //   not-yet-arrived description can't cause a false hide.
 // - must-include can only fail once the description has arrived (or never comes) — a title
 //   that doesn't match yet might still be satisfied by the description.
-function isHiddenByKeywords(
+interface KeywordVerdict {
+  hidden: boolean
+  // Which of the two rules fired, so metrics.ts can attribute the hide.
+  reason?: 'excludedWord' | 'missingWord'
+  // Every excluded word that matched — a job can be caught by several at once.
+  matchedWords: string[]
+}
+
+function evaluateKeywords(
   card: Element,
   jobId: string | null,
   mustIncludeWords: Set<string>,
   mustExcludeWords: Set<string>
-): boolean {
-  if (mustIncludeWords.size === 0 && mustExcludeWords.size === 0) return false
+): KeywordVerdict {
+  if (mustIncludeWords.size === 0 && mustExcludeWords.size === 0) return { hidden: false, matchedWords: [] }
 
   const title = getJobTitle(card)
   const description = jobId ? getJobDescription(jobId) : undefined
   const lowerTitle = title ? title.toLowerCase() : ''
   const lowerDescription = description?.toLowerCase()
 
+  // Checked first, matching the precedence metrics.ts attributes by.
+  const excluded = new Set<string>(matchingWords(lowerTitle, mustExcludeWords))
+  if (lowerDescription !== undefined) {
+    for (const word of matchingWords(lowerDescription, mustExcludeWords)) excluded.add(word)
+  }
+  if (excluded.size > 0) return { hidden: true, reason: 'excludedWord', matchedWords: Array.from(excluded) }
+
   const matchesInclude =
     containsAnyWord(lowerTitle, mustIncludeWords) ||
     (lowerDescription !== undefined && containsAnyWord(lowerDescription, mustIncludeWords))
-  const matchesExclude =
-    containsAnyWord(lowerTitle, mustExcludeWords) ||
-    (lowerDescription !== undefined && containsAnyWord(lowerDescription, mustExcludeWords))
+  if (mustIncludeWords.size > 0 && !matchesInclude && lowerDescription !== undefined) {
+    return { hidden: true, reason: 'missingWord', matchedWords: [] }
+  }
 
-  const failsMustInclude = mustIncludeWords.size > 0 && !matchesInclude && lowerDescription !== undefined
-  const failsMustExclude = mustExcludeWords.size > 0 && matchesExclude
-  return failsMustInclude || failsMustExclude
+  return { hidden: false, matchedWords: [] }
 }
 
 function createActionButton(label: string, ariaLabel: string, onClick: () => void): HTMLButtonElement {
@@ -256,17 +276,25 @@ export function applyHiddenState(
   // (or couldn't be detected) stays visible rather than being hidden on missing data.
   const isHiddenByLanguage =
     selectedLanguages.size > 0 && detectedLanguage !== null && !selectedLanguages.has(detectedLanguage)
-  const isHiddenByKeywordFilter = isHiddenByKeywords(card, jobId, mustIncludeWords, mustExcludeWords)
+  const keywords = evaluateKeywords(card, jobId, mustIncludeWords, mustExcludeWords)
+
+  const isHidden =
+    isHiddenJob || isBlockedCompany || isHiddenApplied || isHiddenViewed || isHiddenByLanguage || keywords.hidden
 
   // Set unconditionally (not just hide) so a recycled card correctly ends up visible
   // when reused for a job that isn't hidden/blocked.
-  card.style.display =
-    isHiddenJob ||
-    isBlockedCompany ||
-    isHiddenApplied ||
-    isHiddenViewed ||
-    isHiddenByLanguage ||
-    isHiddenByKeywordFilter
-      ? 'none'
-      : ''
+  card.style.display = isHidden ? 'none' : ''
+
+  // Exactly one reason per job, most deliberate first — see PRIMARY_REASON_ORDER in
+  // metrics.ts. noteHide() ignores a job it has already counted, so calling it on every
+  // rescan is safe.
+  if (isHidden && jobId) {
+    if (isHiddenJob) noteHide(jobId, 'manual')
+    else if (isBlockedCompany) noteHide(jobId, 'company')
+    else if (keywords.reason === 'excludedWord') noteHide(jobId, 'excludedWord', keywords.matchedWords)
+    else if (keywords.reason === 'missingWord') noteHide(jobId, 'missingWord')
+    else if (isHiddenByLanguage) noteHide(jobId, 'language')
+    else if (isHiddenApplied) noteHide(jobId, 'applied')
+    else if (isHiddenViewed) noteHide(jobId, 'viewed')
+  }
 }

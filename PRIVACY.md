@@ -21,6 +21,9 @@ The following is saved locally in your browser, via the standard
   unhide individual jobs
 - Company names you've blocked
 - Your "Hide Applied" / "Hide Viewed", language, and keyword filter preferences
+- Counts of how many listings each filter has hidden for you, including how many
+  times each of your excluded words matched, so the metrics page can show
+  which filters are actually helping
 
 This data is only accessible to the ApplyW extension itself, stays on your
 device, and is deleted automatically if you remove the extension.
@@ -35,6 +38,15 @@ ApplyW requests:
   so it can hide, block, and filter them, and to add its Hide / Block / filter
   controls to the page. This all happens locally, in your browser; nothing about the
   page or your activity on it is sent to ApplyW or any third party.
+
+## The metrics page
+
+The metrics page on [applyw.chudnovskyi-v.workers.dev](https://applyw.chudnovskyi-v.workers.dev/)
+can ask the extension for the counts described above and display them. This is a
+request from the page to the extension inside your own browser — no network
+request is made, and nothing is sent to ApplyW or anyone else. Only that one
+address is allowed to ask, and it can only read those counts. If the extension
+isn't installed, the page shows nothing.
 
 ## Changes to this policy
 
