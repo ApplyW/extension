@@ -5,8 +5,11 @@ import logoUrl from '../assets/applyw-logo.png'
 import pkg from '../../package.json'
 
 const ISSUES_URL = 'https://github.com/ApplyW/extension/issues'
-// Keep in sync with manifest.config.ts's content_scripts match pattern.
-const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search/'
+// Deliberately this exact string, not the /jobs/search-results/ URL LinkedIn's own UI
+// actually navigates to today (see manifest.config.ts) — this is the one ApplyW was
+// originally built and verified against, and isJobsSearchUrl()'s startsWith check below
+// already happens to cover both without needing to special-case the newer one here.
+const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search'
 // Below this many blocked companies, a filter box is more clutter than it's worth.
 const COMPANY_SEARCH_THRESHOLD = 5
 // How long "Unhide all" stays armed before falling back to its normal label.
@@ -35,6 +38,8 @@ function formatHiddenAt(hiddenAt: number): string {
   return 'just now'
 }
 
+// A loose prefix check on purpose: it also matches .../jobs/search-results/..., the URL
+// LinkedIn's own search bar actually lands on, without listing it separately.
 function isJobsSearchUrl(url: string | undefined): boolean {
   return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
 }
@@ -287,7 +292,7 @@ export function Popup() {
           <p className="status">ApplyW is filtering this tab</p>
         ) : (
           <button type="button" className="button-primary" onClick={handleOpenJobsSearch}>
-            Open LinkedIn Jobs
+            Open filtered job search
           </button>
         )}
 
