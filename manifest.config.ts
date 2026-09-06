@@ -60,6 +60,17 @@ export default defineManifest(({ mode }) => ({
       js: ['src/content/pageBridge.ts'],
       run_at: 'document_start',
       world: 'MAIN'
+    },
+    // Matches all of linkedin.com, not just /jobs/ — LinkedIn is a single-page app, so
+    // reaching /jobs/ by clicking a link from, say, a profile page is a client-side route
+    // change, not a real page load, and Chrome only re-evaluates content_scripts.matches on
+    // real navigations. This has to already be running before the user gets to /jobs/ to
+    // notice the route change at all — see goToSearchButton.ts, which does nothing on any
+    // page but that exact one.
+    {
+      matches: ['https://www.linkedin.com/*'],
+      js: ['src/content/goToSearchButton.ts'],
+      run_at: 'document_idle'
     }
   ]
 }))
