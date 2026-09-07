@@ -5,8 +5,12 @@ import { SITE_ORIGINS } from './src/shared/site'
 
 export default defineManifest(({ mode }) => ({
   manifest_version: 3,
-  name: 'ApplyW',
-  description: "Apply Wisely: hide jobs you've seen, block companies, and filter listings by language on LinkedIn.",
+  // Both of these are what the Chrome Web Store shows as the listing name and summary,
+  // so they are search copy as much as identity: the name is the heaviest-weighted field
+  // in store search and names the features people actually search for, not just the brand.
+  // Hard limits are 75 characters for the name and 132 for the description.
+  name: 'ApplyW - LinkedIn Job Filter: Hide Applied & Viewed Jobs, Block Companies',
+  description: "Clean up LinkedIn Jobs: hide jobs you've viewed or applied to, filter by keyword and language, and block companies.",
   version: pkg.version,
   homepage_url: 'https://github.com/ApplyW/extension',
   icons: {
