@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: September 5, 2026_
+_Last updated: September 6, 2026_
 
 ApplyW is a browser extension that runs entirely on your device. This page
 describes what it does and does not do with your data.
@@ -49,14 +49,23 @@ and emptying your keyword and language selections clears those.
 ApplyW requests:
 
 - **`storage`** — to save the preferences above locally in your browser.
-- **Access to `linkedin.com/jobs/search/*` pages** — to read the content of job
-  listings on the page (title, company name, location, description, language)
-  so it can hide, block, and filter them, and to add its Hide / Block / filter
-  controls to the page. Reading the full description means observing the responses
-  LinkedIn's own page already loads for the listings it shows you; ApplyW never
-  requests anything itself, never alters what LinkedIn receives, and never looks at
-  anything outside those job listings. This all happens locally, in your browser;
-  nothing about the page or your activity on it is sent to ApplyW or any third party.
+- **Access to all of `linkedin.com`** — LinkedIn is a single-page app, so
+  reaching a job search page by clicking a link elsewhere doesn't reload the
+  page, and an extension can only see a page at all if it's already present
+  when that happens. ApplyW is technically present on every LinkedIn page for
+  that reason, but it only reads or changes anything on three of them:
+  `linkedin.com/jobs/` (a single button pointing you to LinkedIn's own job
+  search, since that page has no link to it) and the two job search pages
+  (`.../jobs/search/...` and `.../jobs/search-results/...`), where it reads
+  listing content (title, company name, location, description, language) to
+  hide, block, and filter listings, and adds its own controls to the page.
+  Reading the full description means observing responses LinkedIn's own page
+  already loads for the listings it shows you; ApplyW never requests anything
+  itself, never alters what LinkedIn receives, and never looks outside those
+  job listings. On every other LinkedIn page — your profile, feed, messages,
+  and so on — ApplyW reads nothing and changes nothing. This all happens
+  locally, in your browser; nothing about any page or your activity on it is
+  sent to ApplyW or any third party.
 
 ## The metrics page
 

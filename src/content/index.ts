@@ -19,6 +19,19 @@ let rescanTimer: ReturnType<typeof setTimeout> | undefined
 let domObserver: MutationObserver | undefined
 let hasStoppedForInvalidatedContext = false
 
+// This script now runs on all of linkedin.com (see manifest.config.ts), not just the two
+// job-search URLs it actually does anything on — LinkedIn is a single-page app, so reaching
+// one of those by clicking a link from elsewhere is a client-side route change, not a real
+// page load, and Chrome only injects content scripts on real navigations. Being present
+// from whichever page the user actually started on is the only way to notice a route
+// change into a job-search page at all. Cheap to check before doing any real work — the
+// MutationObserver below already fires on every DOM change site-wide, so without this,
+// every one of those (LinkedIn's feed included) would trigger a full storage read + DOM
+// scan for nothing.
+function isJobSearchPage(): boolean {
+  return location.pathname.startsWith('/jobs/search/') || location.pathname.startsWith('/jobs/search-results/')
+}
+
 // Reloading/updating the extension severs an already-open tab's connection to chrome.*
 // APIs — chrome.runtime.id reads as undefined once that's happened, with no exception
 // thrown, which is what makes it usable as a cheap check before every rescan. Without
@@ -35,7 +48,7 @@ function stopForInvalidatedContext(): void {
 // Debounced so a burst of DOM mutations, or several job languages resolving back to
 // back, collapse into a single rescan instead of one each.
 function scheduleRescan(): void {
-  if (hasStoppedForInvalidatedContext) return
+  if (hasStoppedForInvalidatedContext || !isJobSearchPage()) return
   clearTimeout(rescanTimer)
   rescanTimer = setTimeout(() => void scanForCards(), 200)
 }
@@ -62,9 +75,19 @@ async function scanForCards(): Promise<void> {
     return
   }
 
+  // Each card wrapped in its own try/catch: the new-style card layout (see jobCard.ts's
+  // dual-DOM note) is reverse-engineered from a handful of real samples, not a stable
+  // published structure, so an unusual card is a real possibility, not just theoretical.
+  // Without this, one bad card throwing here would abort the whole forEach — silently
+  // skipping every card after it *and* the filter-pill injection below, which happens to
+  // run after this loop in the same function.
   document.querySelectorAll<HTMLElement>(JOB_CARD_SELECTOR).forEach((card) => {
-    applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages, mustIncludeWords, mustExcludeWords)
-    injectActionButtons(card)
+    try {
+      applyHiddenState(card, hiddenJobIds, blockedCompanies, settings, selectedLanguages, mustIncludeWords, mustExcludeWords)
+      injectActionButtons(card)
+    } catch (error) {
+      console.error('ApplyW: failed to process a job card', error)
+    }
   })
   void injectFilterToggles(scheduleRescan)
   void injectLanguageFilter(scheduleRescan)
@@ -81,7 +104,7 @@ function observeJobList(): void {
   domObserver.observe(document.body, { childList: true, subtree: true })
 }
 
-void scanForCards()
+if (isJobSearchPage()) void scanForCards()
 observeJobList()
 
 // Re-apply hidden state when the popup edits blocked companies / hidden jobs (e.g.

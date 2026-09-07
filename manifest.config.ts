@@ -44,10 +44,16 @@ export default defineManifest(({ mode }) => ({
   },
   content_scripts: [
     {
-      // Scoped to /jobs/search/ specifically, not all of /jobs/* — other LinkedIn job
-      // paths (e.g. /jobs/search-job/) use a different DOM that this code doesn't handle
-      // and injecting into it did more harm than good.
-      matches: ['https://www.linkedin.com/jobs/search/*'],
+      // Matches all of linkedin.com, not just the two job-search paths this actually does
+      // anything on — LinkedIn is a single-page app, so reaching /jobs/search-results/ by
+      // clicking a link from elsewhere (the normal way people get there) is a client-side
+      // route change, not a real page load, and Chrome only injects content scripts on real
+      // navigations. Being present from whichever page the user actually started on is the
+      // only way to notice that route change at all — see index.ts, which does the real
+      // work only while location.pathname actually matches one of those two paths (other
+      // LinkedIn job paths, e.g. /jobs/search-job/, use a different DOM this code doesn't
+      // handle, so those stay excluded even though the match itself is now broad).
+      matches: ['https://www.linkedin.com/*'],
       js: ['src/content/index.ts'],
       run_at: 'document_idle'
     },
@@ -55,8 +61,11 @@ export default defineManifest(({ mode }) => ({
     // only way to peek at LinkedIn's own network responses (chrome.webRequest can't read
     // response bodies in Chrome). Must load before LinkedIn's app code starts making
     // requests, hence document_start. See src/content/pageBridge.ts for why this exists.
+    // Matches all of linkedin.com for the same SPA-navigation reason as index.ts above —
+    // pageBridge.ts already self-gates by checking each request's own URL, so widening its
+    // match needed no other change.
     {
-      matches: ['https://www.linkedin.com/jobs/search/*'],
+      matches: ['https://www.linkedin.com/*'],
       js: ['src/content/pageBridge.ts'],
       run_at: 'document_start',
       world: 'MAIN'

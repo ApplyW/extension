@@ -22,9 +22,11 @@ no quick way to stop seeing a company again. **ApplyW** — *Apply Wisely* — i
 a small Chrome extension that fixes that, directly on the search results
 page — no account, no server, no data leaving your browser.
 
-> Works on LinkedIn's job search results page
-> (`linkedin.com/jobs/search/...`) — other LinkedIn job pages aren't
-> supported yet.
+> Works on both of LinkedIn's job search results pages
+> (`linkedin.com/jobs/search/...` and `.../jobs/search-results/...`) — other
+> LinkedIn job pages aren't supported yet. Hide, and Hide Applied / Hide
+> Viewed, work on both; Block, the Language filter, and the Keyword filter
+> aren't yet available on the newer page design.
 
 ## Features
 
@@ -65,9 +67,10 @@ Then in Chrome: `chrome://extensions` → enable **Developer mode** → **Load u
 ## Privacy
 
 Everything runs locally. ApplyW has no backend, no analytics, no account, and
-requests exactly one permission (`storage`) beyond reading the LinkedIn jobs
-pages it runs on. Hidden jobs, blocked companies, and your filter settings
-are saved in your browser's own extension storage and never sent anywhere.
+requests exactly one permission (`storage`) beyond reading LinkedIn pages —
+though it only actually reads or changes anything on the job search pages
+above. Hidden jobs, blocked companies, and your filter settings are saved in
+your browser's own extension storage and never sent anywhere.
 Full details: [Privacy Policy](./PRIVACY.md).
 
 ## Status

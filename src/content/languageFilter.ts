@@ -1,5 +1,5 @@
 import { getSelectedLanguages, setSelectedLanguages } from '../shared/storage'
-import { findFilterBar } from './filterBar'
+import { findFilterBar, NEW_FILTER_BAR_ID } from './filterBar'
 
 const INJECTED_ATTR = 'data-applyw-language-filter-injected'
 
@@ -229,6 +229,11 @@ function updateTriggerLabel(trigger: HTMLButtonElement, selection: Set<string>):
 export async function injectLanguageFilter(onApplied: () => void): Promise<void> {
   const filterList = findFilterBar()
   if (!filterList || filterList.hasAttribute(INJECTED_ATTR)) return
+  // Language detection only ever works from a job's full description (see jobCard.ts), and
+  // that never arrives on the new-style search-results page — the endpoint that would
+  // supply it there turned out too complex to reverse-engineer reliably. Rather than offer
+  // a filter that can never actually match anything there, it's simply not injected.
+  if (filterList.closest(`#${NEW_FILTER_BAR_ID}`)) return
   filterList.setAttribute(INJECTED_ATTR, 'true')
 
   let selection = await getSelectedLanguages()

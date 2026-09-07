@@ -1,5 +1,5 @@
 import { getMustExcludeWords, getMustIncludeWords, setMustExcludeWords, setMustIncludeWords } from '../shared/storage'
-import { findFilterBar } from './filterBar'
+import { findFilterBar, NEW_FILTER_BAR_ID } from './filterBar'
 
 const INJECTED_ATTR = 'data-applyw-keyword-filter-injected'
 
@@ -196,6 +196,13 @@ function updateTriggerLabel(trigger: HTMLButtonElement, include: Set<string>, ex
 export async function injectKeywordFilter(onApplied: () => void): Promise<void> {
   const filterList = findFilterBar()
   if (!filterList || filterList.hasAttribute(INJECTED_ATTR)) return
+  // Must-exclude can still match on title alone without a description, but must-include
+  // effectively never resolves without one — and that never arrives on the new-style
+  // search-results page (see languageFilter.ts's note). Rather than offer a filter that
+  // only half-works there, it's simply not injected; existing must-include/exclude
+  // settings still apply to titles either way (see evaluateKeywords in jobCard.ts), just
+  // with no UI on this page to change them.
+  if (filterList.closest(`#${NEW_FILTER_BAR_ID}`)) return
   filterList.setAttribute(INJECTED_ATTR, 'true')
 
   let [mustInclude, mustExclude] = await Promise.all([getMustIncludeWords(), getMustExcludeWords()])
