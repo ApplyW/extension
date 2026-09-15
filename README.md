@@ -8,7 +8,6 @@
   [![Latest release](https://img.shields.io/github/v/release/ApplyW/extension?color=1c6feb)](https://github.com/ApplyW/extension/releases/latest)
   [![License: MIT](https://img.shields.io/badge/license-MIT-1c6feb.svg)](./LICENSE)
   [![Manifest V3](https://img.shields.io/badge/manifest-v3-1c6feb.svg)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
-  [![Status](https://img.shields.io/badge/status-beta-orange.svg)](#status)
   [![PRs welcome](https://img.shields.io/badge/PRs-welcome-1c6feb.svg)](https://github.com/ApplyW/extension/issues)
 
   <img src="docs/screenshots/overview.png" alt="ApplyW's Hide and Block controls and its popup, on a LinkedIn job search page" width="820">

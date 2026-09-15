@@ -283,7 +283,6 @@ export function Popup() {
       <header className="header">
         <img src={logoUrl} alt="" className="logo" width={28} height={28} />
         <span className="wordmark">ApplyW</span>
-        <span className="beta">Beta</span>
         <span className="version">v{pkg.version}</span>
       </header>
 
