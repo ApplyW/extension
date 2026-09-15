@@ -24,14 +24,15 @@ page — no account, no server, no data leaving your browser.
 
 > Works on both of LinkedIn's job search results pages
 > (`linkedin.com/jobs/search/...` and `.../jobs/search-results/...`) — other
-> LinkedIn job pages aren't supported yet. Hide, and Hide Applied / Hide
-> Viewed, work on both; Block, the Language filter, and the Keyword filter
-> aren't yet available on the newer page design.
+> LinkedIn job pages aren't supported yet. Hide, Block, and Hide Applied /
+> Hide Viewed work on both; the Language filter and the Keyword filter aren't
+> yet available on the newer page design. Block sits on each job card there,
+> rather than in the opened job's detail pane.
 
 ## Features
 
 - **Hide** any job with one click — it stays hidden across reloads
-- **Block a company** — open a job and block it; every listing from them disappears, immediately and from then on
+- **Block a company** — block it from a job card, or from the opened job; every listing from them disappears, immediately and from then on
 - **Keyword filter** — require or exclude specific words from a job's title or description (e.g. only show listings mentioning "Java", or hide anything mentioning "Junior")
 - **Hide Applied / Hide Viewed** toggles, right next to LinkedIn's own filters (Date Posted, Experience level, ...)
 - **Language filter** — see only jobs written in the languages you actually read, picked from a searchable multi-select list. Detected locally from the real job description, not guessed from the title
