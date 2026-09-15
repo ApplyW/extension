@@ -1,7 +1,9 @@
 import { getSettings, setSetting, type Settings } from '../shared/storage'
 import { findAllFilterBars, NEW_FILTER_BAR_ID } from './filterBar'
 
-const INJECTED_ATTR = 'data-applyw-toggles-injected'
+// Carried by both pill designs, and the only record that a bar already has its toggles —
+// see injectFilterToggles for why that's read back off the live DOM rather than a flag.
+const TOGGLE_MARKER_CLASS = 'applyw-filter-toggle'
 
 interface ToggleConfig {
   id: string
@@ -23,7 +25,7 @@ function setCheckedState(button: HTMLButtonElement, checked: boolean): void {
 // classes) so it inherits LinkedIn's own styling instead of needing our own CSS.
 function createLegacyTogglePill(config: ToggleConfig, isChecked: boolean, onToggle: (next: boolean) => void): HTMLLIElement {
   const li = document.createElement('li')
-  li.className = 'search-reusables__primary-filter'
+  li.className = `search-reusables__primary-filter ${TOGGLE_MARKER_CLASS}`
 
   const wrapper = document.createElement('div')
   wrapper.className = 'search-reusables__filter-binary-toggle'
@@ -49,71 +51,81 @@ function createLegacyTogglePill(config: ToggleConfig, isChecked: boolean, onTogg
   return li
 }
 
-// Classes copied verbatim from a real filter chip (role="radio" + hidden checkbox + label)
-// on the new-style search-results page (see jobCard.ts's dual-DOM note) — LinkedIn's own
-// hashed atomic-CSS classes, current as of that dump, not named/stable ones. If toggle
-// pills stop being styled correctly there, this is the first place to refresh from a fresh
-// sample, the same way the legacy pill above reuses artdeco's real class names.
-const NEW_STYLE_RADIO_CLASS =
-  'bacff651 ab463cd3 _1ff3476f e7fef05d _43b31d36 _11523cd1 _508938c3 c24aac50 f5ddbadc _46f248c1'
-const NEW_STYLE_INNER_CLASS = '_2dce1d54 _5a57e669 c2aac373 _0f531b63 _5883b479 _0a15adc1 _63abe882 _0f531b63 _1b608c33'
-const NEW_STYLE_INPUT_CLASS =
-  '_4670a277 b9f2f6f5 _89d26cc9 _1ff3476f e7fef05d _43b31d36 _11523cd1 _7cd7c649 a1aa7202 c479e6bd f7a815bc'
-const NEW_STYLE_LABEL_CLASS =
-  'f46852c3 b040d531 ebe0e49a _63abe882 _28f52d74 a12f2e0f _5883b479 c5c9403b _698011dd _7008c76b d82dcda9 _276a5939 _15084da5 _672b96aa f5ddbadc _0f531b63 _15d5db3c _65b2dba9 fe7577f5 _1b39b523 _50f9bd52 f447e758 _24c8fc6d _25e4ab6f _2d89b717 _55f35340 _76d5a0dc _12fbcf4a acdfba62'
+// The new-style page styles its filter chips entirely with hashed atomic-CSS class names
+// (e.g. "_46f248c1"), which change every time LinkedIn rebuilds. A verbatim snapshot of a
+// real chip's classes used to be copied here; once it went stale none of them matched a
+// loaded rule any more and these toggles rendered as a bare native checkbox next to an
+// unstyled label. Nothing below depends on a LinkedIn class name — the same choice
+// jobCard.ts's new-style Hide button already makes — so their next rebuild can't break it.
+// The native checkbox is gone with it: an <input> whose "hide me" class stopped applying is
+// exactly what was showing through.
+function styleNewStylePill(pill: HTMLButtonElement, isChecked: boolean): void {
+  Object.assign(pill.style, {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: '32px',
+    marginRight: '8px',
+    padding: '0 12px',
+    font: 'inherit',
+    fontSize: '14px',
+    fontWeight: '600',
+    lineHeight: '20px',
+    whiteSpace: 'nowrap',
+    borderRadius: '16px',
+    cursor: 'pointer',
+    color: 'inherit',
+    // Neutral grey and a translucent fill rather than fixed colours: this bar renders on
+    // both LinkedIn's light and dark themes and nothing here knows which one is active.
+    // Selected state is carried by the heavier border and the fill together, so it still
+    // reads if one of them is washed out by whatever is behind the bar.
+    border: isChecked ? '1px solid currentColor' : '1px solid rgba(128, 128, 128, 0.6)',
+    background: isChecked ? 'rgba(128, 128, 128, 0.25)' : 'transparent',
+    boxShadow: isChecked ? 'inset 0 0 0 1px currentColor' : 'none'
+  })
+}
 
 // One toggle's DOM lives in every copy of the filter bar (see findAllFilterBars) — each
 // copy gets its own independent element, so toggling one doesn't visually update the
 // other's checked state until the next full rescan. Same known gap as the legacy pill,
 // which never re-syncs its own appearance from a setting changed elsewhere either.
-function createNewStyleTogglePill(config: ToggleConfig, isChecked: boolean, onToggle: (next: boolean) => void): HTMLDivElement {
-  const wrapper = document.createElement('div')
-  wrapper.setAttribute('data-display-contents', 'true')
+// No id is set: this bar can render twice, and two copies of the same pill would mean a
+// duplicated id in the document.
+function createNewStyleTogglePill(
+  config: ToggleConfig,
+  isChecked: boolean,
+  onToggle: (next: boolean) => void
+): HTMLButtonElement {
+  const pill = document.createElement('button')
+  pill.type = 'button'
+  pill.className = TOGGLE_MARKER_CLASS
+  pill.textContent = config.label
+  pill.setAttribute('aria-pressed', String(isChecked))
+  pill.setAttribute('aria-label', `${config.label} filter`)
+  styleNewStylePill(pill, isChecked)
 
-  const radio = document.createElement('div')
-  radio.setAttribute('role', 'radio')
-  radio.setAttribute('tabindex', '0')
-  radio.className = NEW_STYLE_RADIO_CLASS
-  radio.setAttribute('aria-label', `Filter by ${config.label}`)
-  radio.setAttribute('aria-checked', String(isChecked))
-
-  const inner = document.createElement('div')
-  inner.className = NEW_STYLE_INNER_CLASS
-  inner.setAttribute('aria-label', `Filter by ${config.label}`)
-
-  const input = document.createElement('input')
-  input.type = 'checkbox'
-  input.className = NEW_STYLE_INPUT_CLASS
-  input.tabIndex = -1
-  input.checked = isChecked
-
-  const label = document.createElement('label')
-  label.className = NEW_STYLE_LABEL_CLASS
-  label.textContent = config.label
-
-  inner.append(input, label)
-  radio.appendChild(inner)
-  wrapper.appendChild(radio)
-
-  // No id/for pairing between input and label (each copy of this pill — see
-  // findAllFilterBars — would otherwise duplicate the same id across the document, and a
-  // label's native "activate my paired control" behaviour fires a second, separate click at
-  // the input, which is easy to double-count). Without that pairing, a click anywhere in
-  // the pill is exactly one plain click bubbling to this single listener — except a click
-  // landing directly on the input, which the browser toggles on its own before this even
-  // runs, so that case just reads the already-new value instead of flipping it again.
-  radio.addEventListener('click', (event) => {
-    const next = event.target === input ? input.checked : !input.checked
-    input.checked = next
-    radio.setAttribute('aria-checked', String(next))
+  pill.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const next = pill.getAttribute('aria-pressed') !== 'true'
+    pill.setAttribute('aria-pressed', String(next))
+    styleNewStylePill(pill, next)
     onToggle(next)
   })
 
-  return wrapper
+  return pill
 }
 
 function isNewStyleFilterBar(container: Element): boolean {
   return container.closest(`#${NEW_FILTER_BAR_ID}`) !== null
+}
+
+// The new-style bar's selector (see NEW_CHIPS_ROW_SELECTOR in filterBar.ts) can transiently
+// match a wrapper LinkedIn hasn't put any chips into yet, while it's still rendering the
+// page — appending there drops the toggles somewhere that never becomes the visible filter
+// row. Waiting for a bar that actually holds something costs nothing: the observer rescans
+// on the next mutation, and the chips arriving is itself a mutation.
+function hasRenderedChips(container: Element): boolean {
+  return container.childElementCount > 0
 }
 
 // Injects Hide Applied / Hide Viewed toggle pills once, at the end of every copy of
@@ -122,7 +134,15 @@ function isNewStyleFilterBar(container: Element): boolean {
 // new value is persisted, so the caller can re-run hidden-state checks against the whole
 // card list.
 export async function injectFilterToggles(onSettingsChanged: () => void): Promise<void> {
-  const filterLists = findAllFilterBars().filter((list) => !list.hasAttribute(INJECTED_ATTR))
+  // "Already done" is read back off the live DOM rather than remembered in a flag on the
+  // bar, matching how jobCard.ts tracks its own buttons. This bar is React-rendered and gets
+  // torn down and rebuilt — arriving at job search through LinkedIn's own UI is a
+  // client-side route change that does exactly that — which takes our pills with it. A flag
+  // would survive on the detached node, and the toggles would never come back for the rest
+  // of that page's life.
+  const filterLists = findAllFilterBars().filter(
+    (list) => hasRenderedChips(list) && !list.querySelector(`.${TOGGLE_MARKER_CLASS}`)
+  )
   if (filterLists.length === 0) return
 
   const settings = await getSettings()
@@ -135,6 +155,5 @@ export async function injectFilterToggles(onSettingsChanged: () => void): Promis
       })
       filterList.appendChild(pill)
     })
-    filterList.setAttribute(INJECTED_ATTR, 'true')
   })
 }
