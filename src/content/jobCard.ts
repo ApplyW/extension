@@ -1,4 +1,4 @@
-import { hideJob, type HiddenJob, type Settings } from '../shared/storage'
+import { blockCompany, hideJob, type HiddenJob, type Settings } from '../shared/storage'
 import { noteHide } from '../shared/metrics'
 import { ensureLanguageDetected, getCachedLanguage } from './language'
 import { getJobDescription } from './jobDescriptions'
@@ -19,6 +19,15 @@ export const JOB_CARD_SELECTOR =
   'li[data-occludable-job-id], div[role="button"][componentkey^="job-card-component-ref-"]'
 
 const ACTION_BUTTON_CLASS = 'applyw-action-button'
+// Tracked separately from the Hide button above, not under the same class: a new-style
+// card's company name is read by walking siblings (getNewStyleInfoSiblings) and can be
+// missing on the pass that injects Hide, so Block has to be able to arrive on a later
+// rescan rather than being skipped forever by a shared "already injected" check.
+const BLOCK_BUTTON_CLASS = 'applyw-block-button'
+// Same red as the legacy detail-pane Block button (topCardBlockButton.ts) — blocking a
+// whole company is the less reversible of the two actions, so it doesn't share the Hide
+// button's neutral treatment.
+const BLOCK_RED = '#ef4444'
 // LinkedIn's own per-card "X" dismiss button — aria-label is "Dismiss <job title> job", so
 // matched by prefix rather than the full label. Present, with the same aria-label shape, on
 // both card designs.
@@ -279,13 +288,40 @@ function createHideIcon(): SVGSVGElement {
   return svg
 }
 
+function createBlockIcon(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('width', '16')
+  svg.setAttribute('height', '16')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '2')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('aria-hidden', 'true')
+
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+  circle.setAttribute('cx', '12')
+  circle.setAttribute('cy', '12')
+  circle.setAttribute('r', '9')
+  const slash = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  slash.setAttribute('d', 'M5.6 5.6 18.4 18.4')
+  svg.append(circle, slash)
+  return svg
+}
+
 // Matches the icon-button footprint of the row it's joining (More options, Dismiss) on the
 // new-style card, rather than the legacy pill above — kept as its own builder since the two
 // pages are styled deliberately differently here, not just adapted from one another.
-function createNewStyleActionButton(ariaLabel: string, onClick: () => void): HTMLButtonElement {
+function createNewStyleActionButton(
+  className: string,
+  ariaLabel: string,
+  icon: SVGSVGElement,
+  color: string,
+  onClick: () => void
+): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = ACTION_BUTTON_CLASS
+  button.className = className
   button.setAttribute('aria-label', ariaLabel)
   Object.assign(button.style, {
     display: 'inline-flex',
@@ -299,10 +335,10 @@ function createNewStyleActionButton(ariaLabel: string, onClick: () => void): HTM
     border: 'none',
     borderRadius: '50%',
     background: 'transparent',
-    color: 'inherit',
+    color,
     cursor: 'pointer'
   })
-  button.appendChild(createHideIcon())
+  button.appendChild(icon)
   button.addEventListener('click', (event) => {
     event.preventDefault()
     event.stopPropagation()
@@ -314,10 +350,17 @@ function createNewStyleActionButton(ariaLabel: string, onClick: () => void): HTM
 // Injects a Hide button in place of LinkedIn's own Dismiss ("X") button, which is hidden —
 // it's a separate, LinkedIn-side hide mechanism that duplicates ours without going through
 // our own storage, so keeping both visible would just be two different "hide" buttons that
-// do different things. Block lives only on the opened job's detail pane (see
-// topCardBlockButton.ts) — blocking a company is a bigger, less-undoable action than hiding
-// one job, so it's reserved for the view where you've actually looked at the company, not a
-// one-click option on every compact list row.
+// do different things.
+//
+// Where Block lives differs by page, and not for aesthetic reasons. On the legacy page it
+// is only in the opened job's detail pane (topCardBlockButton.ts): blocking a company is
+// bigger and less undoable than hiding one job, so it belongs in the view where you have
+// actually looked at the company. That pane has no company-name selector confirmed against
+// a real sample of the new design, and a new-style card's own company name does have one
+// (getCompanyName), so on that page Block sits on the card instead — reachable, but drawn
+// in red rather than sharing the Hide button's neutral treatment, and undoable from the
+// popup's blocked-companies list.
+//
 // LinkedIn virtualizes this list: a card's inner content (including the actions
 // container) can be torn down and rebuilt as it scrolls in/out of view, so "already
 // processed" is checked against the live container's own children rather than a flag
@@ -336,8 +379,6 @@ export function injectActionButtons(card: HTMLElement): void {
   const dismissButton = actionsContainer.querySelector<HTMLElement>(NATIVE_DISMISS_BUTTON_SELECTOR)
   if (dismissButton) dismissButton.style.display = 'none'
 
-  if (card.querySelector(`.${ACTION_BUTTON_CLASS}`)) return
-
   const onHide = (): void => {
     // Snapshotted now, not re-read later — LinkedIn recycles this card's content once
     // it's hidden and scrolled away, so this is the only moment this data is available.
@@ -354,8 +395,22 @@ export function injectActionButtons(card: HTMLElement): void {
       .catch((error) => reportStorageError('hide job', error))
   }
 
+  // Re-read at click time, never closured at injection: LinkedIn recycles a card's content
+  // as it scrolls, so a name captured earlier could belong to a different job by the time
+  // the button is pressed. The block takes effect through index.ts's storage-change
+  // listener, which rescans and hides every card from that company.
+  const onBlock = (): void => {
+    const company = getCompanyName(card)
+    if (!company) return
+    void blockCompany(normalizeCompanyName(company)).catch((error) =>
+      reportStorageError(`block company ${company}`, error)
+    )
+  }
+
   if (legacyActionsContainer) {
-    actionsContainer.appendChild(createLegacyActionButton('Hide', 'Hide this job', onHide))
+    if (!card.querySelector(`.${ACTION_BUTTON_CLASS}`)) {
+      actionsContainer.appendChild(createLegacyActionButton('Hide', 'Hide this job', onHide))
+    }
     return
   }
 
@@ -364,7 +419,25 @@ export function injectActionButtons(card: HTMLElement): void {
   // squeezed out of view entirely (confirmed: it was in the DOM, just not visible). This
   // matches that row's own icon-button footprint instead — kept only on this page; the
   // legacy pill above is unchanged on /jobs/search/.
-  actionsContainer.appendChild(createNewStyleActionButton('Hide this job', onHide))
+  if (!card.querySelector(`.${ACTION_BUTTON_CLASS}`)) {
+    actionsContainer.appendChild(
+      createNewStyleActionButton(ACTION_BUTTON_CLASS, 'Hide this job', createHideIcon(), 'inherit', onHide)
+    )
+  }
+
+  const companyName = getCompanyName(card)
+  if (!companyName) return
+  const blockLabel = `Block ${companyName}`
+  const existingBlockButton = card.querySelector<HTMLButtonElement>(`.${BLOCK_BUTTON_CLASS}`)
+  if (!existingBlockButton) {
+    actionsContainer.appendChild(
+      createNewStyleActionButton(BLOCK_BUTTON_CLASS, blockLabel, createBlockIcon(), BLOCK_RED, onBlock)
+    )
+  } else if (existingBlockButton.getAttribute('aria-label') !== blockLabel) {
+    // Re-synced rather than left alone: a button that outlives a recycle must not keep
+    // naming the company it was created for.
+    existingBlockButton.setAttribute('aria-label', blockLabel)
+  }
 }
 
 export function applyHiddenState(
