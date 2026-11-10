@@ -10,7 +10,9 @@ export default defineManifest(({ mode }) => ({
   // in store search and names the features people actually search for, not just the brand.
   // Hard limits are 75 characters for the name and 132 for the description.
   name: 'ApplyW - LinkedIn Job Language Filter',
-  description: "Clean up LinkedIn Jobs: hide jobs you've viewed or applied to, filter by keyword and language, and block companies.",
+  // Temporary: LinkedIn retired the page the language/keyword controls live on. Restore the
+  // feature claim once they work on /jobs/search-results/.
+  description: 'Clean up LinkedIn Jobs: hide viewed or applied jobs, block companies. LinkedIn changed its site; language & keyword fix in progress.',
   version: pkg.version,
   homepage_url: 'https://github.com/ApplyW/extension',
   icons: {

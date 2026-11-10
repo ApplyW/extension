@@ -25,45 +25,57 @@ Keep it readable as a sentence. A comma-separated pile of keywords trips the
 
 ## Detailed description
 
-First ~100 words carry the search weight, so every target phrase appears there.
-"Free" is repeated because the two largest rivals charge for keyword and company
-blocking; the MIT licence is called out because the best-rated competitor competes
-on exactly that.
+The live text, as pasted into the dashboard. First ~100 words carry the search
+weight, so the target phrases stay in the opening paragraph. Keep the store copy
+honest about what works on the page LinkedIn actually serves: as of 1.0.1 that's
+`/jobs/search-results/`, where the Language filter can't run and the Keyword
+filter has no controls yet.
 
 ```
-Clean up LinkedIn Jobs. ApplyW is a free LinkedIn job filter that hides jobs
-you've already viewed or applied to, lets you block companies you never want to
-see again, and filters listings by keyword and by language — all locally, in your
-browser.
+ApplyW — Apply Wisely — is a free LinkedIn job search filter for Chrome. Hide job postings you've already seen or applied to, and block companies you'll never apply to. It all happens on the search results page, in your own browser: no account, no server, nothing sent anywhere.
 
-FILTERS
-• Hide applied jobs — listings you've already applied to disappear from LinkedIn
-  job search results
-• Hide viewed jobs — stop re-reading the same postings on every search
-• Block a company — one click, and every listing from that employer is gone,
-  permanently
-• Keyword filter — require or exclude words ("Java", "Junior") in a job's title
-  or description
-• Language filter — see only jobs written in languages you actually read,
-  detected from the real job description, not guessed from the title
-• Hide any single job — one click, and it stays hidden across reloads
+❗Works on LinkedIn's job search results page: linkedin.com/jobs/search-results❗
+❗LinkedIn has changed its job search site. The keyword and language filters are temporarily unavailable on the new page — a fix is in progress❗
 
-WHAT YOU HID, AND WHY
-• Hidden jobs list — every job you hid, with title, company, location and when.
-  Bring back one, or all of them
-• Blocked companies list — unblock in one click, searchable once it grows
-• Metrics — see exactly which of your filters is saving you the most time,
-  ranked, with a count for every excluded word
+WHY
 
-PRIVATE BY DESIGN
-No account. No server. No analytics. No tracking. ApplyW makes no network requests
-of its own and asks for a single permission (storage). Your hidden jobs, blocked
-companies and filter settings are saved in your own browser and never sent
-anywhere. Open source under the MIT license.
+LinkedIn's job search gets noisy fast. The same postings resurface after you've read them or applied to them. Listings show up in languages you don't speak. A company you've ruled out keeps appearing under five different job titles. LinkedIn gives you no way to make any of it stop. ApplyW does, in one click per listing, and it stays that way across reloads.
 
-Works on both of LinkedIn's job search pages.
+WHAT IT DOES
 
-Free, no sign-up, no paid tier.
+• Hide any job with one click — it stays hidden across reloads and searches
+• Block a company — click Block on any job card, and every posting from that company disappears, immediately and from then on
+• Hide Applied / Hide Viewed — two toggles sitting right next to LinkedIn's own filters (Date Posted, Experience level, ...)
+• Hidden jobs list — everything you've hidden, with its title, company, location and when you hid it. Bring back any single one, or all of them at once
+• Blocked companies list — everything you've blocked, unblockable in one click, with a search box once the list gets long
+• Metrics — see which of your filters is actually doing the work, ranked side by side, with a per-word breakdown of how many listings each excluded word caught
+• Keyword filter (coming back soon) — show only jobs containing words you choose ("Java", "Remote"), or hide the ones containing words you don't ("Junior", "Unpaid"). Whole-word and case-insensitive, so "Java" never matches "JavaScript". Words you already saved still hide matching job titles
+• Language filter (coming back soon) — see only jobs written in the languages you actually read, detected locally from the real job description
+
+Every filter re-applies automatically as you scroll and as LinkedIn loads more results. Set it up once; it keeps working.
+
+NEW IN 1.0.1
+
+• Hide Applied / Hide Viewed fixed on LinkedIn's new job search page — the toggles were repeating after every one of LinkedIn's filters. They now appear once, right before "All filters"
+
+PRIVACY
+
+ApplyW has no backend, no analytics, no tracking, and no sign-up. It makes no network requests of its own. Your hidden jobs, blocked companies and filter settings are saved in your browser's own extension storage and are deleted when you remove the extension. Job description text is never stored — it's read while the page is open and discarded when you leave.
+
+Beyond reading the LinkedIn job pages it runs on, it asks for exactly one permission: storage.
+
+Full policy: https://github.com/ApplyW/extension/blob/main/PRIVACY.md
+
+OPEN SOURCE
+
+ApplyW is MIT-licensed and the whole extension is readable on GitHub — including everything above, so you don't have to take the privacy claims on trust.
+
+Website: https://applyw.app
+Source: https://github.com/ApplyW/extension
+Bugs and feature requests: https://github.com/ApplyW/extension/issues
+
+Free, open source, actively developed. 
+Not affiliated with or endorsed by LinkedIn.
 ```
 
 ## Keywords

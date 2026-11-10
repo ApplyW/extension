@@ -21,12 +21,13 @@ no quick way to stop seeing a company again. **ApplyW** — *Apply Wisely* — i
 a small Chrome extension that fixes that, directly on the search results
 page — no account, no server, no data leaving your browser.
 
-> Works on both of LinkedIn's job search results pages
-> (`linkedin.com/jobs/search/...` and `.../jobs/search-results/...`) — other
-> LinkedIn job pages aren't supported yet. Hide, Block, and Hide Applied /
-> Hide Viewed work on both; the Language filter and the Keyword filter aren't
-> yet available on the newer page design. Block sits on each job card there,
-> rather than in the opened job's detail pane.
+> Works on LinkedIn's job search results page (`linkedin.com/jobs/search-results/...`).
+> LinkedIn now redirects the older `linkedin.com/jobs/search/...` page there;
+> ApplyW still supports that older page for anyone who gets it. Other LinkedIn
+> job pages aren't supported yet. Hide, Block, and Hide Applied / Hide Viewed
+> work on both pages. The Language filter and the Keyword filter controls exist
+> only on the older page for now: keywords you saved there are still applied to
+> job titles on the new page, and language filtering isn't available on it.
 
 ## Features
 

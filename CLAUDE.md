@@ -11,7 +11,7 @@ that pun, not as an unexplained abbreviation.
 - **Language**: TypeScript
 - **Build**: Vite + `@crxjs/vite-plugin` (CRXJS)
 - **Platform**: Chrome Extension, Manifest V3
-- **Scope today**: content scripts match all of `linkedin.com` (Chrome won't inject on LinkedIn's own client-side route changes otherwise) but only act on `/jobs/search/` (legacy, BEM classes) and `/jobs/search-results/` (current React/SDUI redesign, hashed classes — see `jobCard.ts`); other job paths (e.g. `/jobs/search-job/`) aren't handled. Also a React popup and a background service worker (`onMessageExternal` only).
+- **Scope today**: content scripts match all of `linkedin.com` (Chrome won't inject on LinkedIn's own client-side route changes otherwise) but only act on `/jobs/search/` (legacy, BEM classes; as of November 2026 LinkedIn redirects it to `/jobs/search-results/`, so treat new-style as the page users actually get, but keep legacy support while some users may still be served it) and `/jobs/search-results/` (current React/SDUI redesign, hashed classes — see `jobCard.ts`); other job paths (e.g. `/jobs/search-job/`) aren't handled. Also a React popup and a background service worker (`onMessageExternal` only).
 - **UI**: React 19, only used for the popup (`src/popup/`); the content script stays framework-free DOM manipulation
 - **Persistence**: `chrome.storage.local`, capped at 10 MB without the `unlimitedStorage` permission (not requested) — not a practical constraint for this data (short id/company strings)
 
