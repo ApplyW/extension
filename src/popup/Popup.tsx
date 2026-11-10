@@ -5,11 +5,8 @@ import logoUrl from '../assets/applyw-logo.png'
 import pkg from '../../package.json'
 
 const ISSUES_URL = 'https://github.com/ApplyW/extension/issues'
-// Deliberately this exact string, not the /jobs/search-results/ URL LinkedIn's own UI
-// actually navigates to today (see manifest.config.ts) — this is the one ApplyW was
-// originally built and verified against, and isJobsSearchUrl()'s startsWith check below
-// already happens to cover both without needing to special-case the newer one here.
-const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search'
+// LinkedIn redirects the old /jobs/search/ here, so link straight to it.
+const JOBS_SEARCH_URL = 'https://www.linkedin.com/jobs/search-results/'
 // Below this many blocked companies, a filter box is more clutter than it's worth.
 const COMPANY_SEARCH_THRESHOLD = 5
 // How long "Unhide all" stays armed before falling back to its normal label.
@@ -38,8 +35,8 @@ function formatHiddenAt(hiddenAt: number): string {
   return 'just now'
 }
 
-// A loose prefix check on purpose: it also matches .../jobs/search-results/..., the URL
-// LinkedIn's own search bar actually lands on, without listing it separately.
+// A loose prefix check on purpose: matches both /jobs/search-results/ and the legacy
+// /jobs/search/, which some users may still be served.
 function isJobsSearchUrl(url: string | undefined): boolean {
   return url?.startsWith('https://www.linkedin.com/jobs/search') ?? false
 }

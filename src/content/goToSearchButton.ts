@@ -8,14 +8,14 @@
 // only so it's present early enough to notice.
 
 const BUTTON_ID = 'applyw-go-to-search-button'
-const SEARCH_URL = 'https://www.linkedin.com/jobs/search/'
+const SEARCH_URL = 'https://www.linkedin.com/jobs/search-results/'
 const SIGNAL = '#1a7bff'
 // The mark's one repeated motif — a small skewed tick — reused here at button scale
 // rather than pulled in from popup.css, which isn't loaded on this page.
 const SHEAR = 'skewX(-18deg)'
 
 // Exact path only, not nested pages like /jobs/collections/ or either search page —
-// LinkedIn's Jobs home has no native link to /jobs/search/ at all, so this is the one way
+// LinkedIn's Jobs home has no native link to job search at all, so this is the one way
 // there.
 function isTargetPage(): boolean {
   return location.pathname === '/jobs/'
