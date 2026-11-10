@@ -1,5 +1,6 @@
 import { getSettings, setSetting, type Settings } from '../shared/storage'
-import { findAllFilterBars, findPillInsertionPoint, NEW_FILTER_BAR_ID } from './filterBar'
+import { findAllFilterBars, findPillInsertionPoint, hasRenderedChips, isNewStyleFilterBar } from './filterBar'
+import { styleNewStylePill } from './newStylePill'
 
 // Carried by both pill designs, and the only record that a bar already has its toggles —
 // see injectFilterToggles for why that's read back off the live DOM rather than a flag.
@@ -51,39 +52,6 @@ function createLegacyTogglePill(config: ToggleConfig, isChecked: boolean, onTogg
   return li
 }
 
-// The new-style page styles its filter chips entirely with hashed atomic-CSS class names
-// (e.g. "_46f248c1"), which change every time LinkedIn rebuilds. A verbatim snapshot of a
-// real chip's classes used to be copied here; once it went stale none of them matched a
-// loaded rule any more and these toggles rendered as a bare native checkbox next to an
-// unstyled label. Nothing below depends on a LinkedIn class name — the same choice
-// jobCard.ts's new-style Hide button already makes — so their next rebuild can't break it.
-// The native checkbox is gone with it: an <input> whose "hide me" class stopped applying is
-// exactly what was showing through.
-function styleNewStylePill(pill: HTMLButtonElement, isChecked: boolean): void {
-  Object.assign(pill.style, {
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: '32px',
-    marginRight: '8px',
-    padding: '0 12px',
-    font: 'inherit',
-    fontSize: '14px',
-    fontWeight: '600',
-    lineHeight: '20px',
-    whiteSpace: 'nowrap',
-    borderRadius: '16px',
-    cursor: 'pointer',
-    color: 'inherit',
-    // Neutral grey and a translucent fill rather than fixed colours: this bar renders on
-    // both LinkedIn's light and dark themes and nothing here knows which one is active.
-    // Selected state is carried by the heavier border and the fill together, so it still
-    // reads if one of them is washed out by whatever is behind the bar.
-    border: isChecked ? '1px solid currentColor' : '1px solid rgba(128, 128, 128, 0.6)',
-    background: isChecked ? 'rgba(128, 128, 128, 0.25)' : 'transparent',
-    boxShadow: isChecked ? 'inset 0 0 0 1px currentColor' : 'none'
-  })
-}
-
 // One toggle's DOM lives in every copy of the filter bar (see findAllFilterBars) — each
 // copy gets its own independent element, so toggling one doesn't visually update the
 // other's checked state until the next full rescan. Same known gap as the legacy pill,
@@ -113,19 +81,6 @@ function createNewStyleTogglePill(
   })
 
   return pill
-}
-
-function isNewStyleFilterBar(container: Element): boolean {
-  return container.closest(`#${NEW_FILTER_BAR_ID}`) !== null
-}
-
-// The new-style bar's lookup (see NEW_CHIPS_ROW_SELECTOR in filterBar.ts) can transiently
-// match a wrapper LinkedIn hasn't put any chips into yet, while it's still rendering the
-// page — appending there drops the toggles somewhere that never becomes the visible filter
-// row. Waiting for a bar that actually holds something costs nothing: the observer rescans
-// on the next mutation, and the chips arriving is itself a mutation.
-function hasRenderedChips(container: Element): boolean {
-  return container.childElementCount > 0
 }
 
 // Injects Hide Applied / Hide Viewed toggle pills once, at the end of every copy of

@@ -20,10 +20,6 @@ function findLegacyFilterBar(): Element | null {
 //   existing filter pill rather than a guessed container selector.
 // - New-style page: see NEW_CHIPS_ROW_SELECTOR. The id appears *twice* in the same document
 //   (a sticky-header duplicate of the bar) — findAllFilterBars returns both.
-export function findFilterBar(): Element | null {
-  return findAllFilterBars()[0] ?? null
-}
-
 export function findAllFilterBars(): Element[] {
   const legacyBar = findLegacyFilterBar()
   if (legacyBar) return [legacyBar]
@@ -34,4 +30,15 @@ export function findAllFilterBars(): Element[] {
 // the end (null, for insertBefore) when there's no such button, as on the legacy page.
 export function findPillInsertionPoint(bar: Element): Element | null {
   return bar.querySelector(ALL_FILTERS_BUTTON_SELECTOR)
+}
+
+export function isNewStyleFilterBar(bar: Element): boolean {
+  return bar.closest(`#${NEW_FILTER_BAR_ID}`) !== null
+}
+
+// The new-style bar can transiently match while LinkedIn is still rendering it, before any
+// chips are in; injecting there drops our controls somewhere that never becomes the visible
+// row. The observer rescans once the chips arrive, since that is itself a mutation.
+export function hasRenderedChips(bar: Element): boolean {
+  return bar.childElementCount > 0
 }

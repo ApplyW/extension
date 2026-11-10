@@ -1,7 +1,5 @@
-import { getSelectedLanguages, setSelectedLanguages } from '../shared/storage'
-import { findFilterBar, NEW_FILTER_BAR_ID } from './filterBar'
-
-const INJECTED_ATTR = 'data-applyw-language-filter-injected'
+import { setSelectedLanguages } from '../shared/storage'
+import { syncDropdownFilter, type DropdownFilterConfig } from './filterDropdown'
 
 // Common languages chrome.i18n.detectLanguage can return. Not exhaustive by design —
 // extend this list if a language you need to filter by isn't here.
@@ -202,98 +200,23 @@ function createPanel(
   return panel
 }
 
-function createCaretIcon(): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('role', 'none')
-  svg.setAttribute('aria-hidden', 'true')
-  svg.setAttribute('width', '16')
-  svg.setAttribute('height', '16')
-  svg.setAttribute('viewBox', '0 0 16 16')
-  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
-  use.setAttribute('href', '#caret-small')
-  svg.appendChild(use)
-  return svg
+// A "Language" filter pill + dropdown in LinkedIn's own top filter bar, on both page
+// designs: trigger pill, then a panel with a search box, checkbox list and Cancel/Apply,
+// like LinkedIn's Company/Date Posted dropdowns. The panel is custom-styled rather than a
+// clone of LinkedIn's artdeco-hoverable-content, whose position is computed by LinkedIn's
+// own JS. Matching needs each job's description (see jobCard.ts and pageBridge.ts).
+const LANGUAGE_FILTER: DropdownFilterConfig<Set<string>> = {
+  markerClass: 'applyw-language-filter',
+  legacyId: 'applyw-language-filter',
+  ariaLabel: 'Language filter. Clicking this button displays all Language filter options.',
+  label: (selection) => ({
+    text: selection.size > 0 ? `Language (${selection.size})` : 'Language',
+    isActive: selection.size > 0
+  }),
+  createPanel,
+  save: setSelectedLanguages
 }
 
-function updateTriggerLabel(trigger: HTMLButtonElement, selection: Set<string>): void {
-  trigger.textContent = ''
-  trigger.append(selection.size > 0 ? `Language (${selection.size})` : 'Language', createCaretIcon())
-  trigger.classList.toggle('artdeco-pill--selected', selection.size > 0)
-}
-
-// Injects a "Language" filter pill + dropdown into LinkedIn's own top filter bar, styled
-// to match its Company/Date Posted-style dropdown filters (trigger pill with a caret,
-// hovering dropdown with a search box, checkbox list, Cancel/Apply). The dropdown panel
-// itself is custom-styled rather than a clone of LinkedIn's artdeco-hoverable-content —
-// that component's positioning is computed by LinkedIn's own JS we don't have access to.
-export async function injectLanguageFilter(onApplied: () => void): Promise<void> {
-  const filterList = findFilterBar()
-  if (!filterList || filterList.hasAttribute(INJECTED_ATTR)) return
-  // Language detection only ever works from a job's full description (see jobCard.ts), and
-  // that never arrives on the new-style search-results page — the endpoint that would
-  // supply it there turned out too complex to reverse-engineer reliably. Rather than offer
-  // a filter that can never actually match anything there, it's simply not injected.
-  if (filterList.closest(`#${NEW_FILTER_BAR_ID}`)) return
-  filterList.setAttribute(INJECTED_ATTR, 'true')
-
-  let selection = await getSelectedLanguages()
-
-  const li = document.createElement('li')
-  li.className = 'search-reusables__primary-filter'
-
-  const wrapper = document.createElement('div')
-  wrapper.className = 'search-reusables__filter-trigger-and-dropdown'
-  wrapper.style.position = 'relative'
-
-  const trigger = document.createElement('button')
-  trigger.type = 'button'
-  trigger.id = 'applyw-language-filter'
-  trigger.className =
-    'artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button'
-  trigger.setAttribute('aria-expanded', 'false')
-  trigger.setAttribute('aria-label', 'Language filter. Clicking this button displays all Language filter options.')
-  updateTriggerLabel(trigger, selection)
-
-  let panel: HTMLDivElement | null = null
-
-  const handleOutsideClick = (event: MouseEvent): void => {
-    if (panel && !wrapper.contains(event.target as Node)) closePanel()
-  }
-  const handleKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') closePanel()
-  }
-
-  function closePanel(): void {
-    panel?.remove()
-    panel = null
-    trigger.setAttribute('aria-expanded', 'false')
-    document.removeEventListener('mousedown', handleOutsideClick, true)
-    document.removeEventListener('keydown', handleKeydown, true)
-  }
-
-  function openPanel(): void {
-    panel = createPanel(
-      selection,
-      (nextSelection) => {
-        selection = nextSelection
-        updateTriggerLabel(trigger, selection)
-        closePanel()
-        void setSelectedLanguages(selection).then(onApplied)
-      },
-      closePanel
-    )
-    wrapper.appendChild(panel)
-    trigger.setAttribute('aria-expanded', 'true')
-    document.addEventListener('mousedown', handleOutsideClick, true)
-    document.addEventListener('keydown', handleKeydown, true)
-  }
-
-  trigger.addEventListener('click', () => {
-    if (panel) closePanel()
-    else openPanel()
-  })
-
-  wrapper.appendChild(trigger)
-  li.appendChild(wrapper)
-  filterList.appendChild(li)
+export function syncLanguageFilter(selection: Set<string>, onApplied: () => void): void {
+  syncDropdownFilter(LANGUAGE_FILTER, selection, onApplied)
 }

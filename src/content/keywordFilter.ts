@@ -1,7 +1,10 @@
-import { getMustExcludeWords, getMustIncludeWords, setMustExcludeWords, setMustIncludeWords } from '../shared/storage'
-import { findFilterBar, NEW_FILTER_BAR_ID } from './filterBar'
+import { setMustExcludeWords, setMustIncludeWords } from '../shared/storage'
+import { syncDropdownFilter, type DropdownFilterConfig } from './filterDropdown'
 
-const INJECTED_ATTR = 'data-applyw-keyword-filter-injected'
+interface KeywordSelection {
+  include: Set<string>
+  exclude: Set<string>
+}
 
 // Normalized (trimmed, lowercased) — same known rough edge as blocked company display
 // (see storage.ts): what's typed is what gets shown, lowercased.
@@ -116,9 +119,8 @@ function createWordListSection(
 }
 
 function createPanel(
-  initialInclude: Set<string>,
-  initialExclude: Set<string>,
-  onApply: (include: Set<string>, exclude: Set<string>) => void,
+  initial: KeywordSelection,
+  onApply: (next: KeywordSelection) => void,
   onCancel: () => void
 ): HTMLDivElement {
   const panel = document.createElement('div')
@@ -138,8 +140,8 @@ function createPanel(
     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
   })
 
-  const include = createWordListSection('Must include', 'e.g. Java — press Enter', initialInclude)
-  const exclude = createWordListSection('Must exclude', 'e.g. Junior — press Enter', initialExclude)
+  const include = createWordListSection('Must include', 'e.g. Java — press Enter', initial.include)
+  const exclude = createWordListSection('Must exclude', 'e.g. Junior — press Enter', initial.exclude)
 
   const footer = document.createElement('div')
   Object.assign(footer.style, {
@@ -161,113 +163,31 @@ function createPanel(
   applyButton.type = 'button'
   applyButton.textContent = 'Apply'
   styleFooterButton(applyButton)
-  applyButton.addEventListener('click', () => onApply(include.words, exclude.words))
+  applyButton.addEventListener('click', () => onApply({ include: include.words, exclude: exclude.words }))
 
   footer.append(cancelButton, applyButton)
   panel.append(include.section, exclude.section, footer)
   return panel
 }
 
-function createCaretIcon(): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('role', 'none')
-  svg.setAttribute('aria-hidden', 'true')
-  svg.setAttribute('width', '16')
-  svg.setAttribute('height', '16')
-  svg.setAttribute('viewBox', '0 0 16 16')
-  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
-  use.setAttribute('href', '#caret-small')
-  svg.appendChild(use)
-  return svg
+// A "Keywords" filter pill + dropdown in LinkedIn's own top filter bar, on both page
+// designs: "Must include" and "Must exclude" word lists, matched whole-word and
+// case-insensitively against a job's title and description (see evaluateKeywords in
+// jobCard.ts). Same staged dropdown as the language filter (see languageFilter.ts).
+const KEYWORD_FILTER: DropdownFilterConfig<KeywordSelection> = {
+  markerClass: 'applyw-keyword-filter',
+  legacyId: 'applyw-keyword-filter',
+  ariaLabel: 'Keyword filter. Clicking this button displays description must-include and must-exclude word filters.',
+  label: ({ include, exclude }) => {
+    const count = include.size + exclude.size
+    return { text: count > 0 ? `Keywords (${count})` : 'Keywords', isActive: count > 0 }
+  },
+  createPanel,
+  save: async ({ include, exclude }) => {
+    await Promise.all([setMustIncludeWords(include), setMustExcludeWords(exclude)])
+  }
 }
 
-function updateTriggerLabel(trigger: HTMLButtonElement, include: Set<string>, exclude: Set<string>): void {
-  const count = include.size + exclude.size
-  trigger.textContent = ''
-  trigger.append(count > 0 ? `Keywords (${count})` : 'Keywords', createCaretIcon())
-  trigger.classList.toggle('artdeco-pill--selected', count > 0)
-}
-
-// Injects a "Keywords" filter pill + dropdown into LinkedIn's own top filter bar: two word
-// lists — "Must include" and "Must exclude" — matched against a job's full description
-// (whole-word, case-insensitive; see isHiddenByKeywords in jobCard.ts). Same staged
-// dropdown pattern as the language filter (see languageFilter.ts) — the panel isn't a
-// clone of LinkedIn's own dropdown component, whose position is computed by JS we don't have.
-export async function injectKeywordFilter(onApplied: () => void): Promise<void> {
-  const filterList = findFilterBar()
-  if (!filterList || filterList.hasAttribute(INJECTED_ATTR)) return
-  // Must-exclude can still match on title alone without a description, but must-include
-  // effectively never resolves without one — and that never arrives on the new-style
-  // search-results page (see languageFilter.ts's note). Rather than offer a filter that
-  // only half-works there, it's simply not injected; existing must-include/exclude
-  // settings still apply to titles either way (see evaluateKeywords in jobCard.ts), just
-  // with no UI on this page to change them.
-  if (filterList.closest(`#${NEW_FILTER_BAR_ID}`)) return
-  filterList.setAttribute(INJECTED_ATTR, 'true')
-
-  let [mustInclude, mustExclude] = await Promise.all([getMustIncludeWords(), getMustExcludeWords()])
-
-  const li = document.createElement('li')
-  li.className = 'search-reusables__primary-filter'
-
-  const wrapper = document.createElement('div')
-  wrapper.className = 'search-reusables__filter-trigger-and-dropdown'
-  wrapper.style.position = 'relative'
-
-  const trigger = document.createElement('button')
-  trigger.type = 'button'
-  trigger.id = 'applyw-keyword-filter'
-  trigger.className =
-    'artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button'
-  trigger.setAttribute('aria-expanded', 'false')
-  trigger.setAttribute(
-    'aria-label',
-    'Keyword filter. Clicking this button displays description must-include and must-exclude word filters.'
-  )
-  updateTriggerLabel(trigger, mustInclude, mustExclude)
-
-  let panel: HTMLDivElement | null = null
-
-  const handleOutsideClick = (event: MouseEvent): void => {
-    if (panel && !wrapper.contains(event.target as Node)) closePanel()
-  }
-  const handleKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') closePanel()
-  }
-
-  function closePanel(): void {
-    panel?.remove()
-    panel = null
-    trigger.setAttribute('aria-expanded', 'false')
-    document.removeEventListener('mousedown', handleOutsideClick, true)
-    document.removeEventListener('keydown', handleKeydown, true)
-  }
-
-  function openPanel(): void {
-    panel = createPanel(
-      mustInclude,
-      mustExclude,
-      (nextInclude, nextExclude) => {
-        mustInclude = nextInclude
-        mustExclude = nextExclude
-        updateTriggerLabel(trigger, mustInclude, mustExclude)
-        closePanel()
-        void Promise.all([setMustIncludeWords(mustInclude), setMustExcludeWords(mustExclude)]).then(onApplied)
-      },
-      closePanel
-    )
-    wrapper.appendChild(panel)
-    trigger.setAttribute('aria-expanded', 'true')
-    document.addEventListener('mousedown', handleOutsideClick, true)
-    document.addEventListener('keydown', handleKeydown, true)
-  }
-
-  trigger.addEventListener('click', () => {
-    if (panel) closePanel()
-    else openPanel()
-  })
-
-  wrapper.appendChild(trigger)
-  li.appendChild(wrapper)
-  filterList.appendChild(li)
+export function syncKeywordFilter(selection: KeywordSelection, onApplied: () => void): void {
+  syncDropdownFilter(KEYWORD_FILTER, selection, onApplied)
 }

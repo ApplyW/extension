@@ -8,8 +8,8 @@ import {
 } from '../shared/storage'
 import { JOB_CARD_SELECTOR, applyHiddenState, injectActionButtons } from './jobCard'
 import { injectFilterToggles } from './filterToggles'
-import { injectLanguageFilter } from './languageFilter'
-import { injectKeywordFilter } from './keywordFilter'
+import { syncLanguageFilter } from './languageFilter'
+import { syncKeywordFilter } from './keywordFilter'
 import { syncTopCardBlockButton } from './topCardBlockButton'
 import { listenForJobDescriptions } from './jobDescriptions'
 
@@ -90,8 +90,8 @@ async function scanForCards(): Promise<void> {
     }
   })
   void injectFilterToggles(scheduleRescan)
-  void injectLanguageFilter(scheduleRescan)
-  void injectKeywordFilter(scheduleRescan)
+  syncLanguageFilter(selectedLanguages, scheduleRescan)
+  syncKeywordFilter({ include: mustIncludeWords, exclude: mustExcludeWords }, scheduleRescan)
   syncTopCardBlockButton(blockedCompanies, scheduleRescan)
 }
 
