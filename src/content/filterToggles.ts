@@ -1,5 +1,5 @@
 import { getSettings, setSetting, type Settings } from '../shared/storage'
-import { findAllFilterBars, NEW_FILTER_BAR_ID } from './filterBar'
+import { findAllFilterBars, findPillInsertionPoint, NEW_FILTER_BAR_ID } from './filterBar'
 
 // Carried by both pill designs, and the only record that a bar already has its toggles —
 // see injectFilterToggles for why that's read back off the live DOM rather than a flag.
@@ -119,7 +119,7 @@ function isNewStyleFilterBar(container: Element): boolean {
   return container.closest(`#${NEW_FILTER_BAR_ID}`) !== null
 }
 
-// The new-style bar's selector (see NEW_CHIPS_ROW_SELECTOR in filterBar.ts) can transiently
+// The new-style bar's lookup (see NEW_CHIPS_ROW_SELECTOR in filterBar.ts) can transiently
 // match a wrapper LinkedIn hasn't put any chips into yet, while it's still rendering the
 // page — appending there drops the toggles somewhere that never becomes the visible filter
 // row. Waiting for a bar that actually holds something costs nothing: the observer rescans
@@ -149,11 +149,12 @@ export async function injectFilterToggles(onSettingsChanged: () => void): Promis
 
   filterLists.forEach((filterList) => {
     const createPill = isNewStyleFilterBar(filterList) ? createNewStyleTogglePill : createLegacyTogglePill
+    const insertionPoint = findPillInsertionPoint(filterList)
     TOGGLES.forEach((config) => {
       const pill = createPill(config, settings[config.settingKey], (next) => {
         void setSetting(config.settingKey, next).then(onSettingsChanged)
       })
-      filterList.appendChild(pill)
+      filterList.insertBefore(pill, insertionPoint)
     })
   })
 }
